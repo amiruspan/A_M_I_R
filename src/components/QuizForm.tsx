@@ -16,6 +16,10 @@ const starterQuestion: QuizQuestion = {
   correctIndex: 0,
 };
 
+function createStarterQuestions() {
+  return Array.from({ length: 4 }, () => ({ ...starterQuestion, options: [...starterQuestion.options] }));
+}
+
 const gameModes: { id: GameMode; label: string }[] = [
   { id: 'normal', label: 'Normal' },
   { id: 'hardcore', label: 'Hardcore' },
@@ -28,7 +32,7 @@ export function QuizForm({ onCreate }: QuizFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gameMode, setGameMode] = useState<GameMode>('normal');
-  const [questions, setQuestions] = useState<QuizQuestion[]>([starterQuestion]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>(createStarterQuestions);
   const [activeIndex, setActiveIndex] = useState(0);
   const [busy, setBusy] = useState(false);
   const activeQuestion = questions[activeIndex];
@@ -49,7 +53,7 @@ export function QuizForm({ onCreate }: QuizFormProps) {
   }
 
   function addQuestion() {
-    setQuestions((current) => [...current, starterQuestion]);
+    setQuestions((current) => [...current, { ...starterQuestion, options: [...starterQuestion.options] }]);
     setActiveIndex(questions.length);
   }
 
@@ -67,7 +71,7 @@ export function QuizForm({ onCreate }: QuizFormProps) {
       setTitle('');
       setDescription('');
       setGameMode('normal');
-      setQuestions([starterQuestion]);
+      setQuestions(createStarterQuestions());
       setActiveIndex(0);
     } finally {
       setBusy(false);

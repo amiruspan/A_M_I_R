@@ -43,7 +43,7 @@ export function QuizResultStats({ answers, failedHardcore, onClose, quiz, score 
         </div>
       </dl>
 
-      <div className="answer-review">
+      <div className="answer-dots">
         {quiz.questions.map((question, index) => {
           const isCorrect = answers[index] === question.correctIndex;
           return (
@@ -53,6 +53,27 @@ export function QuizResultStats({ answers, failedHardcore, onClose, quiz, score 
           );
         })}
       </div>
+
+      <section className="answer-review">
+        <h3>Correct answers</h3>
+        {quiz.questions.map((question, index) => {
+          const selectedAnswer = answers[index];
+          const isCorrect = selectedAnswer === question.correctIndex;
+          const selectedText = selectedAnswer === undefined || selectedAnswer < 0
+            ? 'No answer'
+            : question.options[selectedAnswer];
+
+          return (
+            <article className={isCorrect ? 'answer-review-card correct' : 'answer-review-card'} key={`${question.text}-review`}>
+              <div>
+                <strong>{index + 1}. {question.text}</strong>
+                <span>Your answer: {selectedText}</span>
+              </div>
+              <p>Correct: {question.options[question.correctIndex]}</p>
+            </article>
+          );
+        })}
+      </section>
 
       <button onClick={onClose} type="button">Back to quizzes</button>
     </div>

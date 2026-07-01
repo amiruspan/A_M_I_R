@@ -5,6 +5,9 @@ export type Profile = {
   role: Role;
   display_name: string;
   coins: number;
+  xp: number;
+  last_daily_bonus: string | null;
+  earned_badge_ids: string[];
   owned_skin_ids: string[];
   active_skin_id: string;
   owned_name_frame_ids: string[];

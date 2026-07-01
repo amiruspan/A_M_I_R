@@ -11,7 +11,7 @@ type QuizListProps = {
 
 export function QuizList({ attempts, currentUserId, onHost, onPlay, quizzes }: QuizListProps) {
   if (quizzes.length === 0) {
-    return <p className="empty">No shared quizzes yet. Create the first one.</p>;
+    return <p className="empty">No quizzes found. Try another topic.</p>;
   }
 
   return (

@@ -1,5 +1,6 @@
 import type { Profile } from '../lib/quizTypes';
 import { getNameFrame } from '../lib/nameFrameCatalog';
+import { getLevelInfo } from '../lib/profileProgress';
 import { BackgroundMusicButton } from './BackgroundMusicButton';
 import { SkinBadge } from './SkinBadge';
 
@@ -10,6 +11,7 @@ type AppHeaderProps = {
 
 export function AppHeader({ profile, onSignOut }: AppHeaderProps) {
   const nameFrame = getNameFrame(profile.active_name_frame_id);
+  const levelInfo = getLevelInfo(profile.xp);
 
   return (
     <header className="app-header">
@@ -22,7 +24,7 @@ export function AppHeader({ profile, onSignOut }: AppHeaderProps) {
           <SkinBadge skinId={profile.active_skin_id} />
           <span className={`name-frame ${nameFrame.className}`}>{profile.display_name}</span>
         </div>
-        <small>{profile.coins} coins</small>
+        <small>Level {levelInfo.level} | {profile.coins} coins</small>
         <BackgroundMusicButton />
         <button className="secondary-button" onClick={onSignOut} type="button">
           Sign out

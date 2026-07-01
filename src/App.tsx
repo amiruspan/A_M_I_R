@@ -8,6 +8,7 @@ import { PublishPage } from './components/PublishPage';
 import { ProfileStats } from './components/ProfileStats';
 import { QuizPlayer } from './components/QuizPlayer';
 import { SkinShop } from './components/SkinShop';
+import { WelcomeScreen } from './components/WelcomeScreen';
 import type { Attempt, GameMode, HostSession, LocalUser, Quiz, QuizQuestion } from './lib/quizTypes';
 import {
   endHostSession as endRemoteHostSession,
@@ -43,19 +44,23 @@ import {
   startHostSession as startGuestHostSession,
 } from './lib/localHostStore';
 import {
-  awardCoins,
+  awardQuizRewards,
   buyNameFrame,
   buySkin,
+  claimDailyBonus,
   equipNameFrame,
   equipSkin,
   openNameFramePack,
 } from './lib/profileEconomy';
 import { openSkinPack } from './lib/profileEconomy';
+import { xpPerCorrectAnswer, xpPerQuizComplete } from './lib/profileProgress';
 import { getCurrentUser, isGuestUser, saveGuestProfile, saveProfile, signOut } from './lib/userStore';
 import type { NameFrame } from './lib/nameFrameCatalog';
 import type { Skin } from './lib/skinCatalog';
+import { findFeaturedQuizByCode, mergeFeaturedQuizzes } from './lib/featuredQuizzes';
 
 const coinsPerCorrectAnswer = 10;
+const welcomeSeenKey = 'quizroom_welcome_seen';
 
 type PackResult = {
   skin: Skin;
@@ -86,20 +91,23 @@ export default function App() {
   const [activeHost, setActiveHost] = useState<ActiveHost | null>(null);
   const [autoJoinCode, setAutoJoinCode] = useState(() => readJoinCodeFromUrl());
   const [autoJoinStarted, setAutoJoinStarted] = useState(false);
+  const [welcomeSeen, setWelcomeSeen] = useState(() => (
+    localStorage.getItem(welcomeSeenKey) === 'true'
+  ));
 
   async function refresh(nextUser: LocalUser | null = user) {
     if (isGuestUser(nextUser)) {
-      const remoteQuizzes = await loadRemoteQuizzes();
-      setQuizzes([...loadGuestQuizzes(), ...remoteQuizzes]);
+      const remoteQuizzes = await loadRemoteQuizzes().catch(() => []);
+      setQuizzes(mergeFeaturedQuizzes([...loadGuestQuizzes(), ...remoteQuizzes]));
       setAttempts(loadGuestAttempts());
       return;
     }
 
     const [nextQuizzes, nextAttempts] = await Promise.all([
-      loadRemoteQuizzes(),
-      loadRemoteAttempts(),
+      loadRemoteQuizzes().catch(() => []),
+      loadRemoteAttempts().catch(() => []),
     ]);
-    setQuizzes(nextQuizzes);
+    setQuizzes(mergeFeaturedQuizzes(nextQuizzes));
     setAttempts(nextAttempts);
   }
 
@@ -131,6 +139,16 @@ export default function App() {
   async function handleAuth(nextUser: LocalUser) {
     setUser(nextUser);
     await refresh(nextUser);
+  }
+
+  async function handleDailyBonus() {
+    if (!user) return;
+    try {
+      setUser(await claimDailyBonus(user));
+      setMessage('Daily bonus claimed.');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not claim daily bonus.');
+    }
   }
 
   async function handleCreate(
@@ -197,7 +215,7 @@ export default function App() {
         return;
       }
 
-      const joinedQuiz = await loadRemoteQuizByCode(cleanCode);
+      const joinedQuiz = await loadRemoteQuizByCode(cleanCode) ?? findFeaturedQuizByCode(cleanCode);
 
       if (!joinedQuiz) {
         setMessage('Quiz code not found.');
@@ -241,17 +259,18 @@ export default function App() {
   async function handleFinish(score: number, total: number) {
     if (!activeQuiz || !user) return;
     const earnedCoins = score * coinsPerCorrectAnswer;
+    const earnedXp = xpPerQuizComplete + score * xpPerCorrectAnswer;
     if (isGuestUser(user)) {
       saveGuestAttempt(user.user_id, activeQuiz.id, user.display_name, score, total);
       clearGuestProgress(activeQuiz.id);
-      if (earnedCoins > 0) setUser(await awardCoins(user, earnedCoins));
+      setUser(await awardQuizRewards(user, earnedCoins, earnedXp));
       setActiveAnswers([]);
       await refresh(user);
       return;
     }
     await saveRemoteAttempt(user.user_id, activeQuiz.id, user.display_name, score, total);
     await clearRemoteProgress(activeQuiz.id);
-    if (earnedCoins > 0) setUser(await awardCoins(user, earnedCoins));
+    setUser(await awardQuizRewards(user, earnedCoins, earnedXp));
     setActiveAnswers([]);
     await refresh(user);
   }
@@ -328,8 +347,19 @@ export default function App() {
     setActiveHost(null);
   }
 
+  function handleWelcomeStart() {
+    localStorage.setItem(welcomeSeenKey, 'true');
+    setWelcomeSeen(true);
+  }
+
+  function handleWelcomeBack() {
+    localStorage.removeItem(welcomeSeenKey);
+    setWelcomeSeen(false);
+  }
+
   if (loading) return <main className="app-shell"><p className="empty">Loading...</p></main>;
-  if (!user) return <Auth onAuth={(nextUser) => void handleAuth(nextUser)} />;
+  if (!welcomeSeen) return <WelcomeScreen onStart={handleWelcomeStart} />;
+  if (!user) return <Auth onAuth={(nextUser) => void handleAuth(nextUser)} onBack={handleWelcomeBack} />;
 
   return (
     <main className="app-shell">
@@ -407,7 +437,12 @@ export default function App() {
                 email={user.email}
                 onSave={async (name) => handleProfile(name)}
               />
-              <ProfileStats attempts={attempts} user={user} />
+              <ProfileStats
+                attempts={attempts}
+                onClaimDailyBonus={handleDailyBonus}
+                quizzes={quizzes}
+                user={user}
+              />
             </div>
           ) : (
             <ExplorePage

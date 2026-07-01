@@ -6,6 +6,7 @@ import { PackArt } from './PackArt';
 import { PackOpeningOverlay } from './PackOpeningOverlay';
 
 type NameFrameShopProps = {
+  busy: boolean;
   frameResult: { frame: NameFrame; duplicateRefund: number } | null;
   onBuyFrame: (frameId: string) => Promise<void>;
   onEquipFrame: (frameId: string) => Promise<void>;
@@ -14,6 +15,7 @@ type NameFrameShopProps = {
 };
 
 export function NameFrameShop({
+  busy,
   frameResult,
   onBuyFrame,
   onEquipFrame,
@@ -24,10 +26,13 @@ export function NameFrameShop({
   const openingPack = nameFramePacks.find((pack) => pack.id === openingPackId) ?? null;
 
   async function openPack(packId: string) {
+    if (busy) return;
     setOpeningPackId(packId);
-    await new Promise((resolve) => window.setTimeout(resolve, 1150));
-    await onOpenFramePack(packId);
-    setOpeningPackId(null);
+    try {
+      await onOpenFramePack(packId);
+    } finally {
+      setOpeningPackId(null);
+    }
   }
 
   return (
@@ -48,7 +53,7 @@ export function NameFrameShop({
               <p>{pack.description}</p>
               <small>Rare {pack.weights.rare}% | Epic {pack.weights.epic}% | Legend {pack.weights.legendary}%</small>
             </div>
-            <button disabled={!!openingPackId || user.coins < pack.price} onClick={() => void openPack(pack.id)} type="button">
+            <button disabled={busy || !!openingPackId || user.coins < pack.price} onClick={() => void openPack(pack.id)} type="button">
               {openingPackId === pack.id ? 'Opening' : 'Open'}
             </button>
           </article>
@@ -74,6 +79,7 @@ export function NameFrameShop({
         {nameFrames.map((frame) => (
           <FrameCard
             frame={frame}
+            busy={busy}
             key={frame.id}
             onBuyFrame={onBuyFrame}
             onEquipFrame={onEquipFrame}
@@ -87,11 +93,13 @@ export function NameFrameShop({
 
 function FrameCard({
   frame,
+  busy,
   onBuyFrame,
   onEquipFrame,
   user,
 }: {
   frame: NameFrame;
+  busy: boolean;
   onBuyFrame: (frameId: string) => Promise<void>;
   onEquipFrame: (frameId: string) => Promise<void>;
   user: LocalUser;
@@ -109,13 +117,13 @@ function FrameCard({
         <p>{frame.rarity} | {frame.packOnly ? 'Pack only' : frame.price === 0 ? 'Free' : `${frame.price} coins`}</p>
       </div>
       {owned ? (
-        <button disabled={active} onClick={() => void onEquipFrame(frame.id)} type="button">
+        <button disabled={busy || active} onClick={() => void onEquipFrame(frame.id)} type="button">
           {active ? 'Equipped' : 'Equip'}
         </button>
       ) : packOnly ? (
         <button disabled type="button">Pack only</button>
       ) : (
-        <button disabled={!canBuy} onClick={() => void onBuyFrame(frame.id)} type="button">Buy</button>
+        <button disabled={busy || !canBuy} onClick={() => void onBuyFrame(frame.id)} type="button">Buy</button>
       )}
     </article>
   );

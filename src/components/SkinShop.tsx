@@ -33,13 +33,41 @@ export function SkinShop({
   packResult,
 }: SkinShopProps) {
   const [openingPackId, setOpeningPackId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
   const openingPack = skinPacks.find((pack) => pack.id === openingPackId) ?? null;
 
   async function openPack(packId: string) {
+    if (busy) return;
+    setBusy(true);
     setOpeningPackId(packId);
-    await new Promise((resolve) => window.setTimeout(resolve, 1150));
-    await onOpenPack(packId);
-    setOpeningPackId(null);
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 1150));
+      await onOpenPack(packId);
+    } finally {
+      setOpeningPackId(null);
+      setBusy(false);
+    }
+  }
+
+  async function openFramePack(packId: string) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await new Promise((resolve) => window.setTimeout(resolve, 1150));
+      await onOpenFramePack(packId);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function runAction(action: () => Promise<void>) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await action();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -64,7 +92,7 @@ export function SkinShop({
               </small>
             </div>
             <button
-              disabled={!!openingPackId || user.coins < pack.price}
+              disabled={busy || user.coins < pack.price}
               onClick={() => void openPack(pack.id)}
               type="button"
             >
@@ -91,9 +119,10 @@ export function SkinShop({
 
       <NameFrameShop
         frameResult={frameResult}
-        onBuyFrame={onBuyFrame}
-        onEquipFrame={onEquipFrame}
-        onOpenFramePack={onOpenFramePack}
+        busy={busy}
+        onBuyFrame={(frameId) => runAction(() => onBuyFrame(frameId))}
+        onEquipFrame={(frameId) => runAction(() => onEquipFrame(frameId))}
+        onOpenFramePack={openFramePack}
         user={user}
       />
 
@@ -114,7 +143,7 @@ export function SkinShop({
                 </p>
               </div>
               {owned ? (
-                <button disabled={active} onClick={() => void onEquip(skin.id)} type="button">
+                <button disabled={busy || active} onClick={() => void runAction(() => onEquip(skin.id))} type="button">
                   {active ? 'Equipped' : 'Equip'}
                 </button>
               ) : packOnly ? (
@@ -122,7 +151,7 @@ export function SkinShop({
                   Pack only
                 </button>
               ) : (
-                <button disabled={!canBuy} onClick={() => void onBuy(skin.id)} type="button">
+                <button disabled={busy || !canBuy} onClick={() => void runAction(() => onBuy(skin.id))} type="button">
                   Buy
                 </button>
               )}

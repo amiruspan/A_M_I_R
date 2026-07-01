@@ -4,9 +4,32 @@ import type { LocalUser, Role } from './quizTypes';
 
 const guestUserKey = 'quizroom_guest_user';
 const profileColumns = `
-  user_id,role,display_name,coins,owned_skin_ids,active_skin_id,
+  user_id,role,display_name,coins,xp,last_daily_bonus,earned_badge_ids,owned_skin_ids,active_skin_id,
   owned_name_frame_ids,active_name_frame_id
 `;
+const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined;
+
+type SupabaseErrorLike = {
+  code?: string;
+  message?: string;
+  details?: string;
+};
+
+function getAuthRedirectUrl() {
+  const url = authRedirectUrl?.trim() || window.location.origin;
+  return url.endsWith('/') ? url : `${url}/`;
+}
+
+function isMissingProfilesTable(error: SupabaseErrorLike) {
+  const text = `${error.code ?? ''} ${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+  return text.includes('profiles') && (
+    text.includes('404') ||
+    text.includes('could not find') ||
+    text.includes('does not exist') ||
+    error.code === '42P01' ||
+    error.code === 'PGRST205'
+  );
+}
 
 function readGuestUser(): LocalUser | null {
   if (typeof window === 'undefined') return null;
@@ -38,7 +61,12 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     .eq('user_id', userId)
     .maybeSingle();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingProfilesTable(error)) {
+      throw new Error('Database tables are missing. Run npm run db:push, then try logging in again.');
+    }
+    throw error;
+  }
   if (data) return normalizeUser({ ...(data as LocalUser), email });
 
   const profile = {
@@ -46,6 +74,9 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     role: 'student' as Role,
     display_name: email.split('@')[0] || 'Player',
     coins: 0,
+    xp: 0,
+    last_daily_bonus: null,
+    earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',
     owned_name_frame_ids: ['plain'],
@@ -58,7 +89,12 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     .select(profileColumns)
     .single();
 
-  if (createError) throw createError;
+  if (createError) {
+    if (isMissingProfilesTable(createError)) {
+      throw new Error('Database tables are missing. Run npm run db:push, then try logging in again.');
+    }
+    throw createError;
+  }
   return normalizeUser({ ...(created as LocalUser), email });
 }
 
@@ -79,6 +115,9 @@ export function continueAsGuest() {
     display_name: 'Guest',
     email: 'guest@local',
     coins: 0,
+    xp: 0,
+    last_daily_bonus: null,
+    earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',
     owned_name_frame_ids: ['plain'],
@@ -95,6 +134,9 @@ export function continueAsTeacher() {
     display_name: 'Teacher',
     email: 'teacher@local',
     coins: 0,
+    xp: 0,
+    last_daily_bonus: null,
+    earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',
     owned_name_frame_ids: ['plain'],
@@ -129,6 +171,15 @@ export async function signIn(email: string, password: string) {
   if (error) throw error;
   if (!data.user.email) throw new Error('Email is missing.');
   return ensureProfile(data.user.id, data.user.email);
+}
+
+export async function signInWithGoogle() {
+  clearGuestUser();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: getAuthRedirectUrl() },
+  });
+  if (error) throw error;
 }
 
 export async function signOut() {
