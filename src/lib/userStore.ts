@@ -4,7 +4,7 @@ import type { LocalUser, Role } from './quizTypes';
 
 const guestUserKey = 'quizroom_guest_user';
 const profileColumns = `
-  user_id,role,display_name,coins,xp,last_daily_bonus,earned_badge_ids,owned_skin_ids,active_skin_id,
+  user_id,role,display_name,coins,xp,last_daily_bonus,banned_until,earned_badge_ids,owned_skin_ids,active_skin_id,
   owned_name_frame_ids,active_name_frame_id
 `;
 const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined;
@@ -29,6 +29,10 @@ function isMissingProfilesTable(error: SupabaseErrorLike) {
     error.code === '42P01' ||
     error.code === 'PGRST205'
   );
+}
+
+function isBanned(user: LocalUser) {
+  return !!user.banned_until && new Date(user.banned_until).getTime() > Date.now();
 }
 
 function readGuestUser(): LocalUser | null {
@@ -67,7 +71,14 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     }
     throw error;
   }
-  if (data) return normalizeUser({ ...(data as LocalUser), email });
+  if (data) {
+    const user = normalizeUser({ ...(data as LocalUser), email });
+    if (isBanned(user)) {
+      await supabase.auth.signOut();
+      throw new Error('This account is banned.');
+    }
+    return user;
+  }
 
   const profile = {
     user_id: userId,
@@ -76,6 +87,7 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',
@@ -117,6 +129,7 @@ export function continueAsGuest() {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',
@@ -136,6 +149,7 @@ export function continueAsTeacher() {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',

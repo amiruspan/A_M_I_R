@@ -56,6 +56,7 @@ export function createAccount(email: string, password: string) {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
     active_skin_id: 'classic',

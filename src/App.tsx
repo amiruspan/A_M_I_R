@@ -401,7 +401,7 @@ export default function App() {
             </button>
           </nav>
           {page === 'publish' ? (
-            <section className="workspace">
+            <div className="stack">
               <PublishPage
                 attempts={attempts}
                 currentUserId={user.user_id}
@@ -412,12 +412,7 @@ export default function App() {
                 onPlay={handlePlay}
                 quizzes={quizzes}
               />
-              <ProfileSetup
-                currentDisplayName={user.display_name}
-                email={user.email}
-                onSave={async (name) => handleProfile(name)}
-              />
-            </section>
+            </div>
           ) : page === 'shop' ? (
             <SkinShop
               onBuyFrame={handleBuyNameFrame}
