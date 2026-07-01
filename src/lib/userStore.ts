@@ -177,7 +177,10 @@ export async function signInWithGoogle() {
   clearGuestUser();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: getAuthRedirectUrl() },
+    options: {
+      queryParams: { prompt: 'select_account' },
+      redirectTo: getAuthRedirectUrl(),
+    },
   });
   if (error) throw error;
 }
