@@ -1,0 +1,18 @@
+name: Keep Supabase Awake
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Supabase health
+        run: |
+          HTTP_CODE=$(curl -sS -o /dev/null -w "%{http_code}" \
+            -H "apikey: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh3YnF5c21zdndiY2dmcHN4cHptIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI3MDY5MDcsImV4cCI6MjA5ODI4MjkwN30.9yrKNH3EMKD3YLWG17DAWZIKffBf3KWoQzwDP4zT1lM" \
+            "https://hwbqysmsvwbcgfpsxpzm.supabase.co/auth/v1/health")
+          echo "Supabase health HTTP code: ${HTTP_CODE}"
+          test "${HTTP_CODE}" = "200"

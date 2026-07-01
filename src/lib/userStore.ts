@@ -1,0 +1,151 @@
+import { supabase } from './supabase';
+import { normalizeUser } from './profileEconomy';
+import type { LocalUser, Role } from './quizTypes';
+
+const guestUserKey = 'quizroom_guest_user';
+const profileColumns = `
+  user_id,role,display_name,coins,owned_skin_ids,active_skin_id,
+  owned_name_frame_ids,active_name_frame_id
+`;
+
+function readGuestUser(): LocalUser | null {
+  if (typeof window === 'undefined') return null;
+  const raw = window.localStorage.getItem(guestUserKey);
+  if (!raw) return null;
+  try {
+    return normalizeUser(JSON.parse(raw) as LocalUser);
+  } catch {
+    return null;
+  }
+}
+
+function writeGuestUser(user: LocalUser) {
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(guestUserKey, JSON.stringify(user));
+  }
+}
+
+function clearGuestUser() {
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(guestUserKey);
+  }
+}
+
+async function ensureProfile(userId: string, email: string): Promise<LocalUser> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(profileColumns)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (error) throw error;
+  if (data) return normalizeUser({ ...(data as LocalUser), email });
+
+  const profile = {
+    user_id: userId,
+    role: 'student' as Role,
+    display_name: email.split('@')[0] || 'Player',
+    coins: 0,
+    owned_skin_ids: ['classic'],
+    active_skin_id: 'classic',
+    owned_name_frame_ids: ['plain'],
+    active_name_frame_id: 'plain',
+  };
+
+  const { data: created, error: createError } = await supabase
+    .from('profiles')
+    .insert(profile)
+    .select(profileColumns)
+    .single();
+
+  if (createError) throw createError;
+  return normalizeUser({ ...(created as LocalUser), email });
+}
+
+export function isGuestUser(user: LocalUser | null) {
+  return !!user && ['guest-local', 'teacher4-local'].includes(user.user_id);
+}
+
+export function saveGuestProfile(user: LocalUser, role: Role, displayName: string) {
+  const updatedUser = normalizeUser({ ...user, role, display_name: displayName });
+  writeGuestUser(updatedUser);
+  return updatedUser;
+}
+
+export function continueAsGuest() {
+  const guestUser: LocalUser = {
+    user_id: 'guest-local',
+    role: 'student',
+    display_name: 'Guest',
+    email: 'guest@local',
+    coins: 0,
+    owned_skin_ids: ['classic'],
+    active_skin_id: 'classic',
+    owned_name_frame_ids: ['plain'],
+    active_name_frame_id: 'plain',
+  };
+  writeGuestUser(guestUser);
+  return guestUser;
+}
+
+export function continueAsTeacher() {
+  const teacherUser: LocalUser = {
+    user_id: 'teacher4-local',
+    role: 'teacher',
+    display_name: 'Teacher',
+    email: 'teacher@local',
+    coins: 0,
+    owned_skin_ids: ['classic'],
+    active_skin_id: 'classic',
+    owned_name_frame_ids: ['plain'],
+    active_name_frame_id: 'plain',
+  };
+  writeGuestUser(teacherUser);
+  return teacherUser;
+}
+
+export async function getCurrentUser() {
+  const guestUser = readGuestUser();
+  if (guestUser) return guestUser;
+
+  const { data, error } = await supabase.auth.getSession();
+  if (error) throw error;
+  const sessionUser = data.session?.user;
+  if (!sessionUser?.email) return null;
+  return ensureProfile(sessionUser.id, sessionUser.email);
+}
+
+export async function createAccount(email: string, password: string) {
+  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) throw error;
+  if (!data.session || !data.user?.email) {
+    throw new Error('Check your email to finish signup, then sign in.');
+  }
+  return ensureProfile(data.user.id, data.user.email);
+}
+
+export async function signIn(email: string, password: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error) throw error;
+  if (!data.user.email) throw new Error('Email is missing.');
+  return ensureProfile(data.user.id, data.user.email);
+}
+
+export async function signOut() {
+  clearGuestUser();
+  const { error } = await supabase.auth.signOut();
+  if (error) throw error;
+}
+
+export async function saveProfile(userId: string, role: Role, displayName: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ role, display_name: displayName })
+    .eq('user_id', userId)
+    .select(profileColumns)
+    .single();
+
+  if (error) throw error;
+  const email = (await supabase.auth.getUser()).data.user?.email ?? '';
+  return normalizeUser({ ...(data as LocalUser), email });
+}

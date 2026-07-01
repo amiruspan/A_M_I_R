@@ -1,63 +1,84 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import type { LocalUser } from '../lib/quizTypes';
+import { continueAsGuest, createAccount, signIn } from '../lib/userStore';
 
-// Вход и регистрация по email + паролю. Это пример — Codex поможет улучшить (Google-вход и т.д.).
-export function Auth() {
+type AuthProps = {
+  onAuth: (user: LocalUser) => void;
+};
+
+export function Auth({ onAuth }: AuthProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
     setBusy(true);
     setMessage('');
     try {
-      const fn =
+      const user =
         mode === 'signup'
-          ? supabase.auth.signUp({ email, password })
-          : supabase.auth.signInWithPassword({ email, password });
-      const { error } = await fn;
-      if (error) setMessage(error.message);
-      else if (mode === 'signup') setMessage('Готово! Проверь почту, если нужна подтверждалка.');
-    } catch {
-      setMessage('Что-то пошло не так. Попробуй ещё раз.');
+          ? await createAccount(email.trim(), password)
+          : await signIn(email.trim(), password);
+      onAuth(user);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Something went wrong.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function handleGuestEnter() {
+    setBusy(true);
+    setMessage('');
+    try {
+      onAuth(continueAsGuest());
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : 'Could not enter guest mode.');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section className="card">
-      <h2>{mode === 'signin' ? 'Вход' : 'Регистрация'}</h2>
-      <form onSubmit={handleSubmit} className="form">
-        <input
-          type="email"
-          placeholder="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="пароль (6+ символов)"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          minLength={6}
-          required
-        />
-        <button type="submit" disabled={busy}>
-          {busy ? '…' : mode === 'signin' ? 'Войти' : 'Создать аккаунт'}
+    <section className="auth-screen">
+      <div className="auth-card">
+        <p className="eyebrow">QuizRoom</p>
+        <h1>{mode === 'signin' ? 'Sign in' : 'Create account'}</h1>
+        <form className="stack" onSubmit={handleSubmit}>
+          <input
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="email"
+            required
+            type="email"
+            value={email}
+          />
+          <input
+            minLength={6}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="password"
+            required
+            type="password"
+            value={password}
+          />
+          <button disabled={busy} type="submit">
+            {busy ? 'Loading...' : mode === 'signin' ? 'Sign in' : 'Create account'}
+          </button>
+        </form>
+        {message && <p className="message">{message}</p>}
+        <button className="link-button" onClick={handleGuestEnter} type="button">
+          Continue as guest
         </button>
-      </form>
-      {message && <p className="message">{message}</p>}
-      <button
-        className="ghost"
-        onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
-      >
-        {mode === 'signin' ? 'Нет аккаунта? Зарегистрируйся' : 'Уже есть аккаунт? Войти'}
-      </button>
+        <button
+          className="link-button"
+          onClick={() => setMode(mode === 'signin' ? 'signup' : 'signin')}
+          type="button"
+        >
+          {mode === 'signin' ? 'I need an account' : 'I already have an account'}
+        </button>
+      </div>
     </section>
   );
 }
