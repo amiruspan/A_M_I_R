@@ -127,6 +127,10 @@ export default function App() {
       try {
         const nextUser = await getCurrentUser();
         setUser(nextUser);
+        if (nextUser) {
+          localStorage.setItem(welcomeSeenKey, 'true');
+          setWelcomeSeen(true);
+        }
         await refresh(nextUser);
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Could not load progress.');
@@ -369,7 +373,7 @@ export default function App() {
   }
 
   if (loading) return <main className="app-shell"><p className="empty">{copy.loading}</p></main>;
-  if (!welcomeSeen) {
+  if (!welcomeSeen && !user) {
     return (
       <WelcomeScreen
         language={language}

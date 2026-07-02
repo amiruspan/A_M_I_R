@@ -4,6 +4,7 @@ import { getTodayKey, markStreakAnimation, updateLoginStreakForToday } from './p
 import type { LocalUser, Role } from './quizTypes';
 
 const guestUserKey = 'quizroom_guest_user';
+const welcomeSeenKey = 'quizroom_welcome_seen';
 const profileColumns = `
   user_id,role,display_name,coins,xp,last_daily_bonus,login_streak,last_seen_date,banned_until,
   earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
@@ -232,6 +233,9 @@ export async function signIn(email: string, password: string) {
 
 export async function signInWithGoogle() {
   clearGuestUser();
+  if (typeof window !== 'undefined') {
+    window.localStorage.setItem(welcomeSeenKey, 'true');
+  }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
