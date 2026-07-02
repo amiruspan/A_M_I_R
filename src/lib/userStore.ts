@@ -9,6 +9,10 @@ const profileColumns = `
   user_id,role,display_name,coins,xp,last_daily_bonus,login_streak,last_seen_date,banned_until,
   earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
 `;
+const legacyProfileColumns = `
+  user_id,role,display_name,coins,xp,last_daily_bonus,banned_until,
+  earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
+`;
 const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined;
 
 type SupabaseErrorLike = {
@@ -31,6 +35,11 @@ function isMissingProfilesTable(error: SupabaseErrorLike) {
     error.code === '42P01' ||
     error.code === 'PGRST205'
   );
+}
+
+function isMissingStreakColumns(error: SupabaseErrorLike) {
+  const text = `${error.code ?? ''} ${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+  return text.includes('login_streak') || text.includes('last_seen_date');
 }
 
 function isBanned(user: LocalUser) {
@@ -67,11 +76,7 @@ function clearGuestUser() {
 }
 
 async function ensureProfile(userId: string, email: string): Promise<LocalUser> {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select(profileColumns)
-    .eq('user_id', userId)
-    .maybeSingle();
+  const { data, error } = await loadProfile(userId);
 
   if (error) {
     if (isMissingProfilesTable(error)) {
@@ -113,12 +118,48 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     .single();
 
   if (createError) {
+    if (isMissingStreakColumns(createError)) {
+      return createLegacyProfile(profile, email);
+    }
     if (isMissingProfilesTable(createError)) {
       throw new Error('Database tables are missing. Run npm run db:push, then try logging in again.');
     }
     throw createError;
   }
   return normalizeUser({ ...(created as LocalUser), email });
+}
+
+async function loadProfile(userId: string) {
+  const result = await supabase
+    .from('profiles')
+    .select(profileColumns)
+    .eq('user_id', userId)
+    .maybeSingle();
+
+  if (!result.error || !isMissingStreakColumns(result.error)) return result;
+
+  return supabase
+    .from('profiles')
+    .select(legacyProfileColumns)
+    .eq('user_id', userId)
+    .maybeSingle();
+}
+
+async function createLegacyProfile(profile: Omit<LocalUser, 'email'>, email: string) {
+  const { login_streak: _loginStreak, last_seen_date: _lastSeenDate, ...legacyProfile } = profile;
+  const { data, error } = await supabase
+    .from('profiles')
+    .insert(legacyProfile)
+    .select(legacyProfileColumns)
+    .single();
+
+  if (error) throw error;
+  return normalizeUser({
+    ...(data as LocalUser),
+    email,
+    login_streak: profile.login_streak,
+    last_seen_date: profile.last_seen_date,
+  });
 }
 
 async function saveLoginStreak(user: LocalUser) {
@@ -140,7 +181,10 @@ async function saveLoginStreak(user: LocalUser) {
     .select(profileColumns)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (isMissingStreakColumns(error)) return user;
+    throw error;
+  }
   const savedUser = normalizeUser({ ...(data as LocalUser), email: user.email });
   if (savedUser.login_streak > user.login_streak && savedUser.login_streak > 1) {
     markStreakAnimation(savedUser);
@@ -260,7 +304,18 @@ export async function saveProfile(userId: string, role: Role, displayName: strin
     .select(profileColumns)
     .single();
 
-  if (error) throw error;
+  if (error) {
+    if (!isMissingStreakColumns(error)) throw error;
+    const fallback = await supabase
+      .from('profiles')
+      .update({ role, display_name: displayName })
+      .eq('user_id', userId)
+      .select(legacyProfileColumns)
+      .single();
+    if (fallback.error) throw fallback.error;
+    const email = (await supabase.auth.getUser()).data.user?.email ?? '';
+    return normalizeUser({ ...(fallback.data as LocalUser), email });
+  }
   const email = (await supabase.auth.getUser()).data.user?.email ?? '';
   return normalizeUser({ ...(data as LocalUser), email });
 }

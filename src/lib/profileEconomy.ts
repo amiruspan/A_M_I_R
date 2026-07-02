@@ -15,6 +15,10 @@ const profileColumns = `
   user_id,role,display_name,coins,xp,last_daily_bonus,login_streak,last_seen_date,banned_until,
   earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
 `;
+const legacyProfileColumns = `
+  user_id,role,display_name,coins,xp,last_daily_bonus,banned_until,
+  earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
+`;
 
 export function normalizeUser(user: LocalUser): LocalUser {
   return {
@@ -45,6 +49,11 @@ function isGuestUserId(userId: string) {
   return ['guest-local', 'teacher4-local'].includes(userId);
 }
 
+function isMissingStreakColumns(error: { message?: string; details?: string; code?: string }) {
+  const text = `${error.code ?? ''} ${error.message ?? ''} ${error.details ?? ''}`.toLowerCase();
+  return text.includes('login_streak') || text.includes('last_seen_date');
+}
+
 async function updateRemoteProfile(user: LocalUser, patch: Partial<LocalUser>) {
   const { data, error } = await supabase
     .from('profiles')
@@ -53,8 +62,19 @@ async function updateRemoteProfile(user: LocalUser, patch: Partial<LocalUser>) {
     .select(profileColumns)
     .single();
 
-  if (error) throw error;
-  return normalizeUser({ ...(data as LocalUser), email: user.email });
+  if (!error) return normalizeUser({ ...user, ...(data as LocalUser), email: user.email });
+  if (!isMissingStreakColumns(error)) throw error;
+
+  const { login_streak: _loginStreak, last_seen_date: _lastSeenDate, ...legacyPatch } = patch;
+  const fallback = await supabase
+    .from('profiles')
+    .update(legacyPatch)
+    .eq('user_id', user.user_id)
+    .select(legacyProfileColumns)
+    .single();
+
+  if (fallback.error) throw fallback.error;
+  return normalizeUser({ ...user, ...(fallback.data as LocalUser), email: user.email });
 }
 
 export async function awardCoins(user: LocalUser, amount: number) {
