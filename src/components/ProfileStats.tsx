@@ -1,19 +1,22 @@
 import type { Attempt, LocalUser, Quiz } from '../lib/quizTypes';
+import type { Texts } from '../lib/language';
 import {
   canClaimDailyBonus,
   dailyBonusCoins,
   getEarnedBadges,
   getLevelInfo,
+  isStreakOnFire,
 } from '../lib/profileProgress';
 
 type ProfileStatsProps = {
   attempts: Attempt[];
   onClaimDailyBonus: () => Promise<void>;
   quizzes: Quiz[];
+  texts: Texts;
   user: LocalUser;
 };
 
-export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, user }: ProfileStatsProps) {
+export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user }: ProfileStatsProps) {
   const userAttempts = attempts.filter((attempt) => attempt.user_id === user.user_id);
   const totalQuizzes = userAttempts.length;
   const totalCorrect = userAttempts.reduce((sum, attempt) => sum + attempt.score, 0);
@@ -22,6 +25,7 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, user }: Pro
   const levelInfo = getLevelInfo(user.xp);
   const earnedBadges = getEarnedBadges(user, attempts, quizzes);
   const dailyReady = canClaimDailyBonus(user);
+  const streakActive = isStreakOnFire(user);
   const bestAttempt = [...userAttempts].sort((a, b) => {
     const firstPercent = a.score / a.total;
     const secondPercent = b.score / b.total;
@@ -32,16 +36,17 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, user }: Pro
     <section className="panel stack">
       <div>
         <p className="eyebrow">Stats</p>
-        <h2>Your progress</h2>
+        <h2>{texts.profile}</h2>
       </div>
 
       <div className="stats-grid">
-        <StatCard label="Level" value={String(levelInfo.level)} />
+        <StatCard label={texts.level} value={String(levelInfo.level)} />
         <StatCard label="XP" value={`${levelInfo.currentLevelXp}/${levelInfo.nextLevelXp}`} />
-        <StatCard label="Quizzes played" value={String(totalQuizzes)} />
-        <StatCard label="Correct answers" value={`${totalCorrect}/${totalQuestions}`} />
-        <StatCard label="Average score" value={`${averageScore}%`} />
-        <StatCard label="Coins" value={String(user.coins)} />
+        <StatCard label={texts.explore} value={String(totalQuizzes)} />
+        <StatCard label={texts.correctAnswers} value={`${totalCorrect}/${totalQuestions}`} />
+        <StatCard label="Average" value={`${averageScore}%`} />
+        <StatCard label={texts.coins} value={String(user.coins)} />
+        <StatCard label={streakActive ? texts.dayStreak : texts.newStreak} value={String(user.login_streak)} />
       </div>
 
       <div className="level-track" aria-label="Level progress">
@@ -49,16 +54,16 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, user }: Pro
       </div>
 
       <button disabled={!dailyReady} onClick={() => void onClaimDailyBonus()} type="button">
-        {dailyReady ? `Claim daily +${dailyBonusCoins} coins` : 'Daily bonus claimed'}
+        {dailyReady ? `+${dailyBonusCoins} ${texts.coins}` : texts.dailyClaimed}
       </button>
 
       {bestAttempt ? (
         <div className="best-stat">
-          <span>Best result</span>
+          <span>{texts.best}</span>
           <strong>{bestAttempt.score}/{bestAttempt.total}</strong>
         </div>
       ) : (
-        <p className="empty">Play a quiz to start filling your stats.</p>
+        <p className="empty">{texts.noQuizzes}</p>
       )}
 
       <div className="badge-grid">

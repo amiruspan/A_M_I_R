@@ -9,6 +9,8 @@ import { ProfileStats } from './components/ProfileStats';
 import { QuizPlayer } from './components/QuizPlayer';
 import { SkinShop } from './components/SkinShop';
 import { WelcomeScreen } from './components/WelcomeScreen';
+import type { Language } from './lib/language';
+import { languageStorageKey, texts } from './lib/language';
 import type { Attempt, GameMode, HostSession, LocalUser, Quiz, QuizQuestion } from './lib/quizTypes';
 import {
   endHostSession as endRemoteHostSession,
@@ -94,6 +96,15 @@ export default function App() {
   const [welcomeSeen, setWelcomeSeen] = useState(() => (
     localStorage.getItem(welcomeSeenKey) === 'true'
   ));
+  const [language, setLanguage] = useState<Language>(() => (
+    localStorage.getItem(languageStorageKey) === 'ru' ? 'ru' : 'en'
+  ));
+  const copy = texts[language];
+
+  function handleLanguage(nextLanguage: Language) {
+    localStorage.setItem(languageStorageKey, nextLanguage);
+    setLanguage(nextLanguage);
+  }
 
   async function refresh(nextUser: LocalUser | null = user) {
     if (isGuestUser(nextUser)) {
@@ -145,7 +156,7 @@ export default function App() {
     if (!user) return;
     try {
       setUser(await claimDailyBonus(user));
-      setMessage('Daily bonus claimed.');
+      setMessage(copy.dailyClaimed);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not claim daily bonus.');
     }
@@ -357,9 +368,28 @@ export default function App() {
     setWelcomeSeen(false);
   }
 
-  if (loading) return <main className="app-shell"><p className="empty">Loading...</p></main>;
-  if (!welcomeSeen) return <WelcomeScreen onStart={handleWelcomeStart} />;
-  if (!user) return <Auth onAuth={(nextUser) => void handleAuth(nextUser)} onBack={handleWelcomeBack} />;
+  if (loading) return <main className="app-shell"><p className="empty">{copy.loading}</p></main>;
+  if (!welcomeSeen) {
+    return (
+      <WelcomeScreen
+        language={language}
+        onLanguageChange={handleLanguage}
+        onStart={handleWelcomeStart}
+        texts={copy}
+      />
+    );
+  }
+  if (!user) {
+    return (
+      <Auth
+        language={language}
+        onAuth={(nextUser) => void handleAuth(nextUser)}
+        onBack={handleWelcomeBack}
+        onLanguageChange={handleLanguage}
+        texts={copy}
+      />
+    );
+  }
 
   return (
     <main className="app-shell">
@@ -372,7 +402,13 @@ export default function App() {
         />
       ) : (
       <>
-      <AppHeader profile={user} onSignOut={() => void handleSignOut()} />
+      <AppHeader
+        language={language}
+        onLanguageChange={handleLanguage}
+        onSignOut={() => void handleSignOut()}
+        profile={user}
+        texts={copy}
+      />
       {message && <p className="message">{message}</p>}
       {activeQuiz ? (
         <QuizPlayer
@@ -383,21 +419,22 @@ export default function App() {
           onProgress={handleProgress}
           quiz={activeQuiz}
           rewardPerCorrectAnswer={coinsPerCorrectAnswer}
+          texts={copy}
         />
       ) : (
         <div className="stack">
           <nav className="page-tabs" aria-label="Pages">
             <button className={page === 'explore' ? 'active' : ''} onClick={() => setPage('explore')} type="button">
-              Explore
+              {copy.explore}
             </button>
             <button className={page === 'publish' ? 'active' : ''} onClick={() => setPage('publish')} type="button">
-              Publish
+              {copy.publish}
             </button>
             <button className={page === 'shop' ? 'active' : ''} onClick={() => setPage('shop')} type="button">
-              Shop
+              {copy.shop}
             </button>
             <button className={page === 'profile' ? 'active' : ''} onClick={() => setPage('profile')} type="button">
-              Profile
+              {copy.profile}
             </button>
           </nav>
           {page === 'publish' ? (
@@ -411,6 +448,7 @@ export default function App() {
                 onHost={handleHost}
                 onPlay={handlePlay}
                 quizzes={quizzes}
+                texts={copy}
               />
             </div>
           ) : page === 'shop' ? (
@@ -431,11 +469,13 @@ export default function App() {
                 currentDisplayName={user.display_name}
                 email={user.email}
                 onSave={async (name) => handleProfile(name)}
+                texts={copy}
               />
               <ProfileStats
                 attempts={attempts}
                 onClaimDailyBonus={handleDailyBonus}
                 quizzes={quizzes}
+                texts={copy}
                 user={user}
               />
             </div>
@@ -446,6 +486,7 @@ export default function App() {
               onJoin={handleJoin}
               onPlay={handlePlay}
               quizzes={quizzes}
+              texts={copy}
             />
           )}
         </div>

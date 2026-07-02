@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import type { Texts } from '../lib/language';
 
 type JoinQuizCardProps = {
   onJoin: (code: string) => Promise<void>;
+  texts: Texts;
 };
 
-export function JoinQuizCard({ onJoin }: JoinQuizCardProps) {
+export function JoinQuizCard({ onJoin, texts }: JoinQuizCardProps) {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -23,19 +25,19 @@ export function JoinQuizCard({ onJoin }: JoinQuizCardProps) {
   return (
     <section className="panel stack">
       <div>
-        <p className="eyebrow">Join</p>
-        <h2>Connect to quiz</h2>
+        <p className="eyebrow">{texts.join}</p>
+        <h2>{texts.welcomeOneTitle}</h2>
       </div>
       <form className="join-form" onSubmit={handleSubmit}>
         <input
           autoCapitalize="characters"
           maxLength={8}
           onChange={(event) => setCode(event.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase())}
-          placeholder="Enter quiz code"
+          placeholder={texts.code}
           value={code}
         />
         <button disabled={busy || !code.trim()} type="submit">
-          Join
+          {texts.join}
         </button>
       </form>
     </section>

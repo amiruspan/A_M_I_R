@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { PrizeBoard } from './PrizeBoard';
 import { QuizResultStats } from './QuizResultStats';
+import type { Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
 
 type QuizPlayerProps = {
@@ -11,6 +12,7 @@ type QuizPlayerProps = {
   onProgress: (answers: number[]) => Promise<void>;
   quiz: Quiz;
   rewardPerCorrectAnswer: number;
+  texts: Texts;
 };
 
 const skippedAnswer = -1;
@@ -23,6 +25,7 @@ export function QuizPlayer({
   onProgress,
   quiz,
   rewardPerCorrectAnswer,
+  texts,
 }: QuizPlayerProps) {
   const [answers, setAnswers] = useState<number[]>(initialAnswers);
   const answersRef = useRef<number[]>(initialAnswers);
@@ -119,18 +122,18 @@ export function QuizPlayer({
     <section className="player">
       <div className="player-header">
         <div>
-          <p className="eyebrow">Playing</p>
+          <p className="eyebrow">{texts.explore}</p>
           <h2>{quiz.title}</h2>
           <p className="message">{getModeDescription(quiz.game_mode)}</p>
         </div>
-        <button className="secondary-button" onClick={onClose} type="button">Close</button>
+        <button className="secondary-button" onClick={onClose} type="button">{texts.close}</button>
       </div>
 
       {!finished && currentQuestion ? (
         <div className="question-card" key={`${currentQuestion.text}-${currentIndex}`}>
           <div className="question-meta">
-            <span>Question {currentIndex + 1} / {quiz.questions.length}</span>
-            <span>{hasTimer ? `${secondsLeft}s` : 'No timer'}</span>
+            <span>{texts.question} {currentIndex + 1} / {quiz.questions.length}</span>
+            <span>{hasTimer ? `${secondsLeft}s` : texts.noTimer}</span>
           </div>
           {hasTimer ? (
             <div className="timer-track" aria-hidden="true">
@@ -163,12 +166,12 @@ export function QuizPlayer({
             score={score}
           />
           <section className="panel">
-            <p className="eyebrow">Reward</p>
-            <h2>+{score * rewardPerCorrectAnswer} coins</h2>
-            <p className="message">{rewardPerCorrectAnswer} coins for each correct answer.</p>
+            <p className="eyebrow">{texts.coins}</p>
+            <h2>+{score * rewardPerCorrectAnswer} {texts.coins}</h2>
+            <p className="message">{rewardPerCorrectAnswer} {texts.coins}</p>
           </section>
           <section className="panel stack">
-            <h2>Prize places</h2>
+            <h2>{texts.best}</h2>
             <PrizeBoard attempts={attempts} quizId={quiz.id} />
           </section>
         </div>

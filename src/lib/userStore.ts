@@ -1,11 +1,12 @@
 import { supabase } from './supabase';
 import { normalizeUser } from './profileEconomy';
+import { getTodayKey, markStreakAnimation, updateLoginStreakForToday } from './profileProgress';
 import type { LocalUser, Role } from './quizTypes';
 
 const guestUserKey = 'quizroom_guest_user';
 const profileColumns = `
-  user_id,role,display_name,coins,xp,last_daily_bonus,banned_until,earned_badge_ids,owned_skin_ids,active_skin_id,
-  owned_name_frame_ids,active_name_frame_id
+  user_id,role,display_name,coins,xp,last_daily_bonus,login_streak,last_seen_date,banned_until,
+  earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
 `;
 const authRedirectUrl = import.meta.env.VITE_AUTH_REDIRECT_URL as string | undefined;
 
@@ -40,7 +41,13 @@ function readGuestUser(): LocalUser | null {
   const raw = window.localStorage.getItem(guestUserKey);
   if (!raw) return null;
   try {
-    return normalizeUser(JSON.parse(raw) as LocalUser);
+    const currentUser = normalizeUser(JSON.parse(raw) as LocalUser);
+    const user = updateLoginStreakForToday(currentUser);
+    if (user.login_streak > currentUser.login_streak && user.login_streak > 1) {
+      markStreakAnimation(user);
+    }
+    writeGuestUser(user);
+    return user;
   } catch {
     return null;
   }
@@ -77,9 +84,10 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
       await supabase.auth.signOut();
       throw new Error('This account is banned.');
     }
-    return user;
+    return saveLoginStreak(user);
   }
 
+  const today = getTodayKey();
   const profile = {
     user_id: userId,
     role: 'student' as Role,
@@ -87,6 +95,8 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    login_streak: 1,
+    last_seen_date: today,
     banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
@@ -110,6 +120,33 @@ async function ensureProfile(userId: string, email: string): Promise<LocalUser> 
   return normalizeUser({ ...(created as LocalUser), email });
 }
 
+async function saveLoginStreak(user: LocalUser) {
+  const nextUser = updateLoginStreakForToday(user);
+  if (
+    nextUser.login_streak === user.login_streak &&
+    nextUser.last_seen_date === user.last_seen_date
+  ) {
+    return user;
+  }
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({
+      login_streak: nextUser.login_streak,
+      last_seen_date: nextUser.last_seen_date,
+    })
+    .eq('user_id', user.user_id)
+    .select(profileColumns)
+    .single();
+
+  if (error) throw error;
+  const savedUser = normalizeUser({ ...(data as LocalUser), email: user.email });
+  if (savedUser.login_streak > user.login_streak && savedUser.login_streak > 1) {
+    markStreakAnimation(savedUser);
+  }
+  return savedUser;
+}
+
 export function isGuestUser(user: LocalUser | null) {
   return !!user && ['guest-local', 'teacher4-local'].includes(user.user_id);
 }
@@ -121,6 +158,7 @@ export function saveGuestProfile(user: LocalUser, role: Role, displayName: strin
 }
 
 export function continueAsGuest() {
+  const today = getTodayKey();
   const guestUser: LocalUser = {
     user_id: 'guest-local',
     role: 'student',
@@ -129,6 +167,8 @@ export function continueAsGuest() {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    login_streak: 1,
+    last_seen_date: today,
     banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
@@ -141,6 +181,7 @@ export function continueAsGuest() {
 }
 
 export function continueAsTeacher() {
+  const today = getTodayKey();
   const teacherUser: LocalUser = {
     user_id: 'teacher4-local',
     role: 'teacher',
@@ -149,6 +190,8 @@ export function continueAsTeacher() {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    login_streak: 1,
+    last_seen_date: today,
     banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],

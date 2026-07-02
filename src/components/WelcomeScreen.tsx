@@ -1,37 +1,34 @@
+import type { Language, Texts } from '../lib/language';
+import { LanguageToggle } from './LanguageToggle';
+
 type WelcomeScreenProps = {
+  language: Language;
+  onLanguageChange: (language: Language) => void;
   onStart: () => void;
+  texts: Texts;
 };
 
-const highlights = [
-  {
-    title: 'Играй в викторины',
-    text: 'Выбирай готовую викторину или вводи код от друга, чтобы сразу начать игру.',
-  },
-  {
-    title: 'Создавай свои вопросы',
-    text: 'Собери собственную викторину, поделись кодом и устрой мини-соревнование.',
-  },
-  {
-    title: 'Зарабатывай coins',
-    text: 'За правильные ответы ты получаешь coins и можешь открывать скины и рамки.',
-  },
-];
+export function WelcomeScreen({ language, onLanguageChange, onStart, texts }: WelcomeScreenProps) {
+  const highlights = [
+    { title: texts.welcomeOneTitle, text: texts.welcomeOneText },
+    { title: texts.welcomeTwoTitle, text: texts.welcomeTwoText },
+    { title: texts.welcomeThreeTitle, text: texts.welcomeThreeText },
+  ];
 
-export function WelcomeScreen({ onStart }: WelcomeScreenProps) {
   return (
     <main className="welcome-screen">
       <section className="welcome-panel">
         <div className="welcome-copy">
+          <LanguageToggle language={language} onChange={onLanguageChange} texts={texts} />
           <p className="eyebrow">QuizRoom</p>
-          <h1>Викторина, где ты отвечаешь, создаешь и прокачиваешь профиль</h1>
+          <h1>{texts.welcomeTitle}</h1>
           <p className="welcome-text">
-            Это игра с короткими вопросами. Отвечай правильно, набирай очки,
-            получай coins и открывай новые украшения для своего профиля.
+            {texts.welcomeText}
           </p>
-          <button onClick={onStart} type="button">Начать</button>
+          <button onClick={onStart} type="button">{texts.welcomeAction}</button>
         </div>
 
-        <div className="welcome-steps" aria-label="Что можно делать в игре">
+        <div className="welcome-steps" aria-label={texts.welcomeTitle}>
           {highlights.map((item, index) => (
             <article className="welcome-step" key={item.title}>
               <span>{index + 1}</span>

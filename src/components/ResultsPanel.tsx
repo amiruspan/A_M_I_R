@@ -1,19 +1,21 @@
+import type { Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
 
 type ResultsPanelProps = {
   attempts: Attempt[];
   quizzes: Quiz[];
+  texts: Texts;
 };
 
-export function ResultsPanel({ attempts, quizzes }: ResultsPanelProps) {
+export function ResultsPanel({ attempts, quizzes, texts }: ResultsPanelProps) {
   const recent = attempts.slice(0, 5);
   const leaders = getLeaders(attempts).slice(0, 5);
 
   return (
     <section className="panel stack">
-      <h2>Recent results</h2>
+      <h2>{texts.best}</h2>
       {recent.length === 0 ? (
-        <p className="empty">Results will appear after someone plays.</p>
+        <p className="empty">{texts.noQuizzes}</p>
       ) : (
         <ul className="results-list">
           {recent.map((attempt) => {
@@ -28,9 +30,9 @@ export function ResultsPanel({ attempts, quizzes }: ResultsPanelProps) {
         </ul>
       )}
 
-      <h2>Leaderboard</h2>
+      <h2>{texts.level}</h2>
       {leaders.length === 0 ? (
-        <p className="empty">Top players will appear soon.</p>
+        <p className="empty">{texts.noQuizzes}</p>
       ) : (
         <ol className="leader-list">
           {leaders.map((leader) => (

@@ -1,15 +1,20 @@
 import { useState } from 'react';
+import type { Language, Texts } from '../lib/language';
 import type { LocalUser } from '../lib/quizTypes';
 import { continueAsGuest, createAccount, signIn, signInWithGoogle } from '../lib/userStore';
+import { LanguageToggle } from './LanguageToggle';
 
 type AuthMode = 'login' | 'signup';
 
 type AuthProps = {
+  language: Language;
   onAuth: (user: LocalUser) => void;
   onBack: () => void;
+  onLanguageChange: (language: Language) => void;
+  texts: Texts;
 };
 
-export function Auth({ onAuth, onBack }: AuthProps) {
+export function Auth({ language, onAuth, onBack, onLanguageChange, texts }: AuthProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mode, setMode] = useState<AuthMode>('login');
@@ -78,10 +83,11 @@ export function Auth({ onAuth, onBack }: AuthProps) {
     <section className="auth-screen">
       <div className="auth-card">
         <button className="link-button auth-back-button" onClick={onBack} type="button">
-          Back
+          {texts.back}
         </button>
+        <LanguageToggle language={language} onChange={onLanguageChange} texts={texts} />
         <p className="eyebrow">QuizRoom</p>
-        <h1>{isSignup ? 'Sign up' : 'Log in'}</h1>
+        <h1>{isSignup ? texts.signup : texts.login}</h1>
 
         <div className="auth-tabs" aria-label="Auth mode">
           <button
@@ -90,7 +96,7 @@ export function Auth({ onAuth, onBack }: AuthProps) {
             onClick={() => switchMode('login')}
             type="button"
           >
-            Log in
+            {texts.login}
           </button>
           <button
             className={mode === 'signup' ? 'active' : ''}
@@ -98,7 +104,7 @@ export function Auth({ onAuth, onBack }: AuthProps) {
             onClick={() => switchMode('signup')}
             type="button"
           >
-            Sign up
+            {texts.signup}
           </button>
         </div>
 
@@ -119,18 +125,18 @@ export function Auth({ onAuth, onBack }: AuthProps) {
             value={password}
           />
           <button disabled={busy} type="submit">
-            {busy ? 'Loading...' : isSignup ? 'Create account' : 'Log in'}
+            {busy ? texts.loading : isSignup ? texts.signup : texts.login}
           </button>
         </form>
 
-        <div className="auth-divider"><span>or</span></div>
+        <div className="auth-divider"><span>{texts.or}</span></div>
         <button className="google-button" disabled={busy} onClick={handleGoogleEnter} type="button">
-          {busy ? 'Opening Google...' : 'Continue with Google'}
+          {busy ? texts.loading : texts.google}
         </button>
 
         {message && <p className="message auth-message">{message}</p>}
         <button className="link-button full-button" disabled={busy} onClick={handleGuestEnter} type="button">
-          Continue as guest
+          {texts.guest}
         </button>
       </div>
     </section>

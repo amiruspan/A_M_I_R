@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
 import { JoinQuizCard } from './JoinQuizCard';
 import { QuizList } from './QuizList';
@@ -10,9 +11,10 @@ type ExplorePageProps = {
   onJoin: (code: string) => Promise<void>;
   onPlay: (quiz: Quiz) => Promise<void>;
   quizzes: Quiz[];
+  texts: Texts;
 };
 
-export function ExplorePage({ attempts, currentUserId, onJoin, onPlay, quizzes }: ExplorePageProps) {
+export function ExplorePage({ attempts, currentUserId, onJoin, onPlay, quizzes, texts }: ExplorePageProps) {
   const [search, setSearch] = useState('');
   const visibleQuizzes = useMemo(() => (
     search.trim() ? filterQuizzes(quizzes, search) : getPopularQuizzes(quizzes, attempts)
@@ -21,15 +23,15 @@ export function ExplorePage({ attempts, currentUserId, onJoin, onPlay, quizzes }
   return (
     <section className="workspace">
       <div className="stack">
-        <JoinQuizCard onJoin={onJoin} />
+        <JoinQuizCard onJoin={onJoin} texts={texts} />
         <section className="panel stack">
           <div>
-            <h2>Quiz library</h2>
-            <p className="message">Popular quizzes are shown first. Search to find more topics.</p>
+            <h2>{texts.explore}</h2>
+            <p className="message">{texts.welcomeOneText}</p>
           </div>
           <input
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search quizzes"
+            placeholder={texts.search}
             value={search}
           />
           <QuizList
@@ -37,10 +39,11 @@ export function ExplorePage({ attempts, currentUserId, onJoin, onPlay, quizzes }
             currentUserId={currentUserId}
             onPlay={onPlay}
             quizzes={visibleQuizzes}
+            texts={texts}
           />
         </section>
       </div>
-      <ResultsPanel attempts={attempts} quizzes={quizzes} />
+      <ResultsPanel attempts={attempts} quizzes={quizzes} texts={texts} />
     </section>
   );
 }

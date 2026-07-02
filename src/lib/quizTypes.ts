@@ -7,6 +7,8 @@ export type Profile = {
   coins: number;
   xp: number;
   last_daily_bonus: string | null;
+  login_streak: number;
+  last_seen_date: string | null;
   banned_until: string | null;
   earned_badge_ids: string[];
   owned_skin_ids: string[];

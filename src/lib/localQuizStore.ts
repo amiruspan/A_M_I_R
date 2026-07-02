@@ -1,5 +1,6 @@
 import type { Attempt, GameMode, LocalUser, Quiz, QuizQuestion, Role, StoredAccount } from './quizTypes';
 import { normalizeUser } from './profileEconomy';
+import { getTodayKey, markStreakAnimation, updateLoginStreakForToday } from './profileProgress';
 
 const accountsKey = 'quizroom_accounts';
 const userKey = 'quizroom_user';
@@ -35,7 +36,14 @@ function isNumericShareCode(code: string) {
 
 export function getCurrentUser() {
   const user = readJson<LocalUser | null>(userKey, null);
-  return user ? normalizeUser(user) : null;
+  if (!user) return null;
+  const currentUser = normalizeUser(user);
+  const nextUser = updateLoginStreakForToday(currentUser);
+  if (nextUser.login_streak > currentUser.login_streak && nextUser.login_streak > 1) {
+    markStreakAnimation(nextUser);
+  }
+  writeJson(userKey, nextUser);
+  return nextUser;
 }
 
 export function signOut() {
@@ -47,6 +55,7 @@ export function createAccount(email: string, password: string) {
   if (accounts.some((account) => account.email === email)) {
     throw new Error('Account already exists.');
   }
+  const today = getTodayKey();
   const account: StoredAccount = {
     user_id: createId(),
     email,
@@ -56,6 +65,8 @@ export function createAccount(email: string, password: string) {
     coins: 0,
     xp: 0,
     last_daily_bonus: null,
+    login_streak: 1,
+    last_seen_date: today,
     banned_until: null,
     earned_badge_ids: [],
     owned_skin_ids: ['classic'],
@@ -73,8 +84,16 @@ export function signIn(email: string, password: string) {
   const account = accounts.find((item) => item.email === email && item.password === password);
   if (!account) throw new Error('Wrong email or password.');
   const user = normalizeUser(account);
-  writeJson(userKey, user);
-  return user;
+  const nextUser = updateLoginStreakForToday(user);
+  if (nextUser.login_streak > user.login_streak && nextUser.login_streak > 1) {
+    markStreakAnimation(nextUser);
+  }
+  const nextAccounts = accounts.map((item) => (
+    item.user_id === nextUser.user_id ? { ...item, ...nextUser, password: item.password } : item
+  ));
+  writeJson(accountsKey, nextAccounts);
+  writeJson(userKey, nextUser);
+  return nextUser;
 }
 
 export function saveProfile(userId: string, role: Role, displayName: string) {

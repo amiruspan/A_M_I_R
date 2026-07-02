@@ -12,8 +12,8 @@ import { getSkin, starterSkinId } from './skinCatalog';
 
 const guestUserKey = 'quizroom_guest_user';
 const profileColumns = `
-  user_id,role,display_name,coins,xp,last_daily_bonus,banned_until,earned_badge_ids,owned_skin_ids,active_skin_id,
-  owned_name_frame_ids,active_name_frame_id
+  user_id,role,display_name,coins,xp,last_daily_bonus,login_streak,last_seen_date,banned_until,
+  earned_badge_ids,owned_skin_ids,active_skin_id,owned_name_frame_ids,active_name_frame_id
 `;
 
 export function normalizeUser(user: LocalUser): LocalUser {
@@ -22,6 +22,8 @@ export function normalizeUser(user: LocalUser): LocalUser {
     coins: user.coins ?? 0,
     xp: user.xp ?? 0,
     last_daily_bonus: user.last_daily_bonus ?? null,
+    login_streak: user.login_streak ?? 0,
+    last_seen_date: user.last_seen_date ?? null,
     banned_until: user.banned_until ?? null,
     earned_badge_ids: user.earned_badge_ids ?? [],
     owned_skin_ids: user.owned_skin_ids?.length ? user.owned_skin_ids : [starterSkinId],

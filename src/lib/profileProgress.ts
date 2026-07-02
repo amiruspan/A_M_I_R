@@ -1,4 +1,4 @@
-import type { Attempt, LocalUser, Quiz } from './quizTypes';
+import type { Attempt, LocalUser, Profile, Quiz } from './quizTypes';
 
 export type Badge = {
   id: string;
@@ -6,6 +6,7 @@ export type Badge = {
   description: string;
 };
 
+const streakAnimationKey = 'quizroom_streak_animation';
 export const dailyBonusCoins = 50;
 export const xpPerCorrectAnswer = 12;
 export const xpPerQuizComplete = 20;
@@ -30,11 +31,56 @@ export function getLevelInfo(xp: number) {
 }
 
 export function getTodayKey() {
-  return new Date().toISOString().slice(0, 10);
+  const now = new Date();
+  const localDate = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return localDate.toISOString().slice(0, 10);
+}
+
+function dateKeyToUtcMs(dateKey: string) {
+  return new Date(`${dateKey}T00:00:00.000Z`).getTime();
+}
+
+export function updateLoginStreakForToday(user: LocalUser) {
+  const today = getTodayKey();
+  if (user.last_seen_date === today) return user;
+
+  const lastSeenMs = user.last_seen_date ? dateKeyToUtcMs(user.last_seen_date) : Number.NaN;
+  const todayMs = dateKeyToUtcMs(today);
+  const daysSinceLastSeen = Number.isFinite(lastSeenMs)
+    ? Math.round((todayMs - lastSeenMs) / 86_400_000)
+    : 0;
+  const loginStreak = daysSinceLastSeen === 1 ? user.login_streak + 1 : 1;
+
+  return {
+    ...user,
+    last_seen_date: today,
+    login_streak: loginStreak,
+  };
+}
+
+export function isStreakOnFire(user: Profile) {
+  return user.login_streak > 1 && user.last_seen_date === getTodayKey();
+}
+
+export function markStreakAnimation(user: Profile) {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(streakAnimationKey, getStreakAnimationValue(user));
+}
+
+export function consumeStreakAnimation(user: Profile) {
+  if (typeof window === 'undefined') return false;
+  const value = getStreakAnimationValue(user);
+  if (window.sessionStorage.getItem(streakAnimationKey) !== value) return false;
+  window.sessionStorage.removeItem(streakAnimationKey);
+  return true;
 }
 
 export function canClaimDailyBonus(user: LocalUser) {
   return user.last_daily_bonus !== getTodayKey();
+}
+
+function getStreakAnimationValue(user: Profile) {
+  return `${user.user_id}:${user.login_streak}:${user.last_seen_date ?? ''}`;
 }
 
 export function getEarnedBadges(user: LocalUser, attempts: Attempt[], quizzes: Quiz[]) {
