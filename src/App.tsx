@@ -56,6 +56,7 @@ import {
 } from './lib/profileEconomy';
 import { openSkinPack } from './lib/profileEconomy';
 import { xpPerCorrectAnswer, xpPerQuizComplete } from './lib/profileProgress';
+import { supabase } from './lib/supabase';
 import { getCurrentUser, isGuestUser, saveGuestProfile, saveProfile, signOut } from './lib/userStore';
 import type { NameFrame } from './lib/nameFrameCatalog';
 import type { Skin } from './lib/skinCatalog';
@@ -94,7 +95,7 @@ export default function App() {
   const [autoJoinCode, setAutoJoinCode] = useState(() => readJoinCodeFromUrl());
   const [autoJoinStarted, setAutoJoinStarted] = useState(false);
   const [welcomeSeen, setWelcomeSeen] = useState(() => (
-    localStorage.getItem(welcomeSeenKey) === 'true'
+    localStorage.getItem(welcomeSeenKey) === 'true' || hasAuthRedirectParams()
   ));
   const [language, setLanguage] = useState<Language>(() => (
     localStorage.getItem(languageStorageKey) === 'ru' ? 'ru' : 'en'
@@ -125,13 +126,9 @@ export default function App() {
   useEffect(() => {
     async function boot() {
       try {
+        await finishAuthRedirect();
         const nextUser = await getCurrentUser();
-        setUser(nextUser);
-        if (nextUser) {
-          localStorage.setItem(welcomeSeenKey, 'true');
-          setWelcomeSeen(true);
-        }
-        await refresh(nextUser);
+        await applyLoadedUser(nextUser);
       } catch (error) {
         setMessage(error instanceof Error ? error.message : 'Could not load progress.');
       } finally {
@@ -141,6 +138,28 @@ export default function App() {
 
     void boot();
   }, []);
+
+  useEffect(() => {
+    const { data } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event !== 'SIGNED_IN' || !session?.user.email) return;
+      void getCurrentUser()
+        .then((nextUser) => applyLoadedUser(nextUser))
+        .catch((error: unknown) => {
+          setMessage(error instanceof Error ? error.message : 'Could not load progress.');
+        });
+    });
+
+    return () => data.subscription.unsubscribe();
+  }, []);
+
+  async function applyLoadedUser(nextUser: LocalUser | null) {
+    setUser(nextUser);
+    if (nextUser) {
+      localStorage.setItem(welcomeSeenKey, 'true');
+      setWelcomeSeen(true);
+    }
+    await refresh(nextUser);
+  }
 
   async function handleProfile(displayName: string) {
     if (!user) return;
@@ -503,5 +522,41 @@ export default function App() {
 
 function readJoinCodeFromUrl() {
   const params = new URLSearchParams(window.location.search);
-  return params.get('code') ?? params.get('join') ?? '';
+  const joinCode = params.get('join');
+  const code = params.get('code') ?? '';
+  if (joinCode) return joinCode;
+  return /^[a-zA-Z0-9]{1,8}$/.test(code) ? code : '';
+}
+
+function hasAuthRedirectParams() {
+  const params = new URLSearchParams(window.location.search);
+  return params.has('code') || params.has('error') || params.has('error_description');
+}
+
+async function finishAuthRedirect() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  const authError = params.get('error_description') ?? params.get('error');
+
+  if (authError) throw new Error(authError);
+  if (!code) return;
+
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  cleanAuthRedirectParams();
+  if (error && !isIgnorableAuthExchangeError(error.message)) {
+    throw error;
+  }
+}
+
+function isIgnorableAuthExchangeError(message: string) {
+  const cleanMessage = message.toLowerCase();
+  return cleanMessage.includes('invalid flow state') || cleanMessage.includes('code verifier');
+}
+
+function cleanAuthRedirectParams() {
+  const url = new URL(window.location.href);
+  ['code', 'error', 'error_code', 'error_description'].forEach((key) => {
+    url.searchParams.delete(key);
+  });
+  window.history.replaceState({}, '', url);
 }
