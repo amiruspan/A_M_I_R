@@ -56,6 +56,8 @@ import {
 } from './lib/profileEconomy';
 import { openSkinPack } from './lib/profileEconomy';
 import { xpPerCorrectAnswer, xpPerQuizComplete } from './lib/profileProgress';
+import type { AppPage } from './lib/routes';
+import { getPathForPage, isKnownAppPath, readPageFromPath } from './lib/routes';
 import { supabase } from './lib/supabase';
 import { getCurrentUser, isGuestUser, saveGuestProfile, saveProfile, signOut } from './lib/userStore';
 import type { NameFrame } from './lib/nameFrameCatalog';
@@ -88,7 +90,7 @@ export default function App() {
   const [activeAnswers, setActiveAnswers] = useState<number[]>([]);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState<'publish' | 'explore' | 'shop' | 'profile'>('explore');
+  const [page, setPage] = useState<AppPage>(() => readPageFromPath(window.location.pathname));
   const [packResult, setPackResult] = useState<PackResult | null>(null);
   const [frameResult, setFrameResult] = useState<FramePackResult | null>(null);
   const [activeHost, setActiveHost] = useState<ActiveHost | null>(null);
@@ -140,6 +142,23 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!isKnownAppPath(window.location.pathname)) {
+      window.history.replaceState({}, '', getPathForPage('explore'));
+      setPage('explore');
+    }
+
+    function handlePopState() {
+      if (!isKnownAppPath(window.location.pathname)) {
+        window.history.replaceState({}, '', getPathForPage('explore'));
+      }
+      setPage(readPageFromPath(window.location.pathname));
+    }
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== 'SIGNED_IN' || !session?.user.email) return;
       void getCurrentUser()
@@ -157,8 +176,21 @@ export default function App() {
     if (nextUser) {
       localStorage.setItem(welcomeSeenKey, 'true');
       setWelcomeSeen(true);
+      if (window.location.pathname === '/') {
+        replaceRoute('explore');
+      }
     }
     await refresh(nextUser);
+  }
+
+  function navigateToPage(nextPage: AppPage) {
+    setPage(nextPage);
+    window.history.pushState({}, '', getPathForPage(nextPage));
+  }
+
+  function replaceRoute(nextPage: AppPage) {
+    setPage(nextPage);
+    window.history.replaceState({}, '', getPathForPage(nextPage));
   }
 
   async function handleProfile(displayName: string) {
@@ -173,6 +205,9 @@ export default function App() {
   async function handleAuth(nextUser: LocalUser) {
     setUser(nextUser);
     await refresh(nextUser);
+    if (window.location.pathname === '/') {
+      navigateToPage('explore');
+    }
   }
 
   async function handleDailyBonus() {
@@ -270,9 +305,10 @@ export default function App() {
     if (loading || !user || !autoJoinCode || autoJoinStarted) return;
 
     setAutoJoinStarted(true);
-    setPage('explore');
+    replaceRoute('explore');
     void handleJoin(autoJoinCode).then(() => {
       const url = new URL(window.location.href);
+      url.pathname = getPathForPage('explore');
       url.searchParams.delete('code');
       url.searchParams.delete('join');
       window.history.replaceState({}, '', url);
@@ -379,6 +415,7 @@ export default function App() {
     setActiveQuiz(null);
     setActiveAnswers([]);
     setActiveHost(null);
+    window.history.pushState({}, '', '/');
   }
 
   function handleWelcomeStart() {
@@ -389,10 +426,11 @@ export default function App() {
   function handleWelcomeBack() {
     localStorage.removeItem(welcomeSeenKey);
     setWelcomeSeen(false);
+    window.history.pushState({}, '', '/');
   }
 
   if (loading) return <main className="app-shell"><p className="empty">{copy.loading}</p></main>;
-  if (!welcomeSeen && !user) {
+  if (!welcomeSeen && !user && window.location.pathname === '/') {
     return (
       <WelcomeScreen
         language={language}
@@ -447,16 +485,16 @@ export default function App() {
       ) : (
         <div className="stack">
           <nav className="page-tabs" aria-label="Pages">
-            <button className={page === 'explore' ? 'active' : ''} onClick={() => setPage('explore')} type="button">
+            <button className={page === 'explore' ? 'active' : ''} onClick={() => navigateToPage('explore')} type="button">
               {copy.explore}
             </button>
-            <button className={page === 'publish' ? 'active' : ''} onClick={() => setPage('publish')} type="button">
+            <button className={page === 'publish' ? 'active' : ''} onClick={() => navigateToPage('publish')} type="button">
               {copy.publish}
             </button>
-            <button className={page === 'shop' ? 'active' : ''} onClick={() => setPage('shop')} type="button">
+            <button className={page === 'shop' ? 'active' : ''} onClick={() => navigateToPage('shop')} type="button">
               {copy.shop}
             </button>
-            <button className={page === 'profile' ? 'active' : ''} onClick={() => setPage('profile')} type="button">
+            <button className={page === 'profile' ? 'active' : ''} onClick={() => navigateToPage('profile')} type="button">
               {copy.profile}
             </button>
           </nav>

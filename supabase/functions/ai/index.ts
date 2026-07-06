@@ -9,15 +9,17 @@
 // Модель можно поменять (gemini-2.0-flash — быстрая и бесплатная).
 
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
-const MODEL = 'gemini-2.0-flash';
+const MODEL = 'gemini-2.5-flash';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Max-Age': '86400',
 };
 
 Deno.serve(async (req) => {
-  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: cors });
 
   try {
     if (!GEMINI_API_KEY) {
@@ -39,7 +41,13 @@ Deno.serve(async (req) => {
     );
 
     const data = await res.json();
+    if (!res.ok) {
+      throw new Error(readGeminiError(data) ?? `Gemini request failed with status ${res.status}`);
+    }
+
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
+    if (!text) throw new Error('Gemini did not return text. Try again.');
+
     return new Response(JSON.stringify({ text }), {
       headers: { ...cors, 'Content-Type': 'application/json' },
     });
@@ -50,3 +58,13 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+function readGeminiError(data: unknown) {
+  if (!isRecord(data) || !isRecord(data.error)) return null;
+  const message = data.error.message;
+  return typeof message === 'string' ? message : null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}

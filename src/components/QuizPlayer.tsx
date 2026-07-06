@@ -3,6 +3,7 @@ import { PrizeBoard } from './PrizeBoard';
 import { QuizResultStats } from './QuizResultStats';
 import type { Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
+import { playLoseSound, playWinSound } from '../lib/quizSounds';
 
 type QuizPlayerProps = {
   attempts: Attempt[];
@@ -75,6 +76,9 @@ export function QuizPlayer({
     answersRef.current = next;
     setAnswers(next);
     void onProgress(next);
+    if (answerIndex !== currentQuestion.correctIndex) {
+      playLoseSound();
+    }
     if (mistakeIsFatal && answerIndex !== currentQuestion.correctIndex) {
       void finish(next, true);
       return;
@@ -89,6 +93,7 @@ export function QuizPlayer({
     answersRef.current = next;
     setAnswers(next);
     void onProgress(next);
+    playLoseSound();
     if (mistakeIsFatal) {
       void finish(next, true);
       return;
@@ -111,6 +116,9 @@ export function QuizPlayer({
     finishingRef.current = true;
     setFailedHardcore(failed);
     setFinished(true);
+    if (!failed && getScore(quiz, finalAnswers) === quiz.questions.length) {
+      playWinSound();
+    }
     try {
       await onFinish(getScore(quiz, finalAnswers), quiz.questions.length);
     } catch {

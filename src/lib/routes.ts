@@ -1,0 +1,23 @@
+export type AppPage = 'explore' | 'publish' | 'shop' | 'profile';
+
+export const pagePaths: Record<AppPage, string> = {
+  explore: '/app',
+  publish: '/create',
+  shop: '/shop',
+  profile: '/profile',
+};
+
+export function readPageFromPath(pathname: string): AppPage {
+  if (pathname === pagePaths.publish) return 'publish';
+  if (pathname === pagePaths.shop) return 'shop';
+  if (pathname === pagePaths.profile) return 'profile';
+  return 'explore';
+}
+
+export function getPathForPage(page: AppPage) {
+  return pagePaths[page];
+}
+
+export function isKnownAppPath(pathname: string) {
+  return pathname === '/' || Object.values(pagePaths).includes(pathname);
+}

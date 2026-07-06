@@ -110,6 +110,7 @@
 .answer-review-card p {
   color: var(--muted);
   line-height: 1.4;
+  overflow-wrap: anywhere;
 }
 
 .answer-review-card p { font-weight: 900; }
@@ -127,4 +128,37 @@
 
 @media (max-width: 820px) {
   .stats-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .result-card {
+    gap: 12px;
+    padding: 16px 12px;
+  }
+
+  .score-ring {
+    width: 108px;
+    height: 108px;
+    font-size: 24px;
+  }
+
+  .score-ring::before {
+    inset: 10px;
+  }
+
+  .stats-grid {
+    gap: 8px;
+  }
+
+  .stats-grid div {
+    padding: 10px;
+  }
+
+  .stats-grid dd {
+    font-size: 22px;
+  }
+
+  .answer-review-card {
+    padding: 10px;
+  }
 }

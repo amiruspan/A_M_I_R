@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { AiQuizGenerator } from './AiQuizGenerator';
+import type { AiQuizDraft } from '../lib/aiQuiz';
 import type { GameMode, QuizQuestion } from '../lib/quizTypes';
 
 type QuizFormProps = {
@@ -63,6 +65,13 @@ export function QuizForm({ onCreate }: QuizFormProps) {
     setActiveIndex((current) => Math.max(0, current - 1));
   }
 
+  function applyAiDraft(draft: AiQuizDraft) {
+    setTitle(draft.title);
+    setDescription(draft.description);
+    setQuestions(draft.questions);
+    setActiveIndex(0);
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -81,6 +90,7 @@ export function QuizForm({ onCreate }: QuizFormProps) {
   return (
     <form className="panel stack" onSubmit={handleSubmit}>
       <h2>Create quiz</h2>
+      <AiQuizGenerator onGenerated={applyAiDraft} />
       <input onChange={(event) => setTitle(event.target.value)} placeholder="Quiz title" required value={title} />
       <input onChange={(event) => setDescription(event.target.value)} placeholder="Short description" value={description} />
       <div className="mode-grid">
