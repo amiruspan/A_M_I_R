@@ -3,6 +3,7 @@ import { AppHeader } from './components/AppHeader';
 import { Auth } from './components/Auth';
 import { ExplorePage } from './components/ExplorePage';
 import { HostScreen } from './components/HostScreen';
+import { LiveQuizPlayer } from './components/LiveQuizPlayer';
 import { ProfileSetup } from './components/ProfileSetup';
 import { PublishPage } from './components/PublishPage';
 import { ProfileStats } from './components/ProfileStats';
@@ -11,12 +12,18 @@ import { SkinShop } from './components/SkinShop';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import type { Language } from './lib/language';
 import { languageStorageKey, texts } from './lib/language';
-import type { Attempt, GameMode, HostSession, LocalUser, Quiz, QuizQuestion } from './lib/quizTypes';
+import type { Attempt, GameMode, HostParticipant, HostSession, LocalUser, Quiz, QuizQuestion } from './lib/quizTypes';
 import {
   endHostSession as endRemoteHostSession,
+  finishLiveGame as finishRemoteLiveGame,
   joinHostSession as joinRemoteHostSession,
   loadActiveHostByCode as loadRemoteActiveHostByCode,
+  loadHostAnswers as loadRemoteHostAnswers,
   loadHostParticipants as loadRemoteHostParticipants,
+  loadHostSession as loadRemoteHostSession,
+  saveHostAnswer as saveRemoteHostAnswer,
+  setLiveQuestion as setRemoteLiveQuestion,
+  startLiveGame as startRemoteLiveGame,
   startHostSession as startRemoteHostSession,
 } from './lib/hostStore';
 import {
@@ -40,9 +47,15 @@ import {
 } from './lib/localQuizStore';
 import {
   endHostSession as endGuestHostSession,
+  finishLiveGame as finishGuestLiveGame,
   joinHostSession as joinGuestHostSession,
   loadActiveHostByQuiz as loadGuestActiveHostByQuiz,
+  loadHostAnswers as loadGuestHostAnswers,
   loadHostParticipants as loadGuestHostParticipants,
+  loadHostSession as loadGuestHostSession,
+  saveHostAnswer as saveGuestHostAnswer,
+  setLiveQuestion as setGuestLiveQuestion,
+  startLiveGame as startGuestLiveGame,
   startHostSession as startGuestHostSession,
 } from './lib/localHostStore';
 import {
@@ -82,6 +95,10 @@ type ActiveHost = {
   session: HostSession;
 };
 
+type ActiveLive = ActiveHost & {
+  participant: HostParticipant;
+};
+
 export default function App() {
   const [user, setUser] = useState<LocalUser | null>(null);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
@@ -94,6 +111,7 @@ export default function App() {
   const [packResult, setPackResult] = useState<PackResult | null>(null);
   const [frameResult, setFrameResult] = useState<FramePackResult | null>(null);
   const [activeHost, setActiveHost] = useState<ActiveHost | null>(null);
+  const [activeLive, setActiveLive] = useState<ActiveLive | null>(null);
   const [autoJoinCode, setAutoJoinCode] = useState(() => readJoinCodeFromUrl());
   const [autoJoinStarted, setAutoJoinStarted] = useState(false);
   const [welcomeSeen, setWelcomeSeen] = useState(() => (
@@ -270,6 +288,33 @@ export default function App() {
     setActiveHost(null);
   }
 
+  async function handleStartLiveGame() {
+    if (!activeHost || !user) return;
+    if (isGuestUser(user)) {
+      startGuestLiveGame(activeHost.session.id);
+      return;
+    }
+    await startRemoteLiveGame(activeHost.session.id);
+  }
+
+  async function handleNextLiveQuestion(questionIndex: number) {
+    if (!activeHost || !user) return;
+    if (isGuestUser(user)) {
+      setGuestLiveQuestion(activeHost.session.id, questionIndex);
+      return;
+    }
+    await setRemoteLiveQuestion(activeHost.session.id, questionIndex);
+  }
+
+  async function handleFinishLiveGame() {
+    if (!activeHost || !user) return;
+    if (isGuestUser(user)) {
+      finishGuestLiveGame(activeHost.session.id);
+      return;
+    }
+    await finishRemoteLiveGame(activeHost.session.id);
+  }
+
   async function handleJoin(code: string) {
     if (!user) return;
     const cleanCode = code.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
@@ -277,10 +322,39 @@ export default function App() {
 
     try {
       if (localMatch) {
-        const guestHost = loadGuestActiveHostByQuiz(localMatch);
-        if (guestHost) joinGuestHostSession(guestHost.id, user.display_name);
+        if (isGuestUser(user)) {
+          const guestHost = loadGuestActiveHostByQuiz(localMatch);
+          if (guestHost) {
+            const participant = joinGuestHostSession(guestHost.id, user.display_name);
+            setActiveLive({ quiz: localMatch, session: guestHost, participant });
+            setMessage('');
+            return;
+          }
+          setMessage('');
+          await handlePlay(localMatch);
+          return;
+        }
+
+        const remoteHost = await loadRemoteActiveHostByCode(cleanCode, loadRemoteQuizByCode).catch(() => null);
+        if (remoteHost) {
+          const participant = await joinRemoteHostSession(remoteHost.session.id, user.display_name);
+          if (participant) setActiveLive({ ...remoteHost, participant });
+          setMessage('');
+          return;
+        }
         setMessage('');
         await handlePlay(localMatch);
+        return;
+      }
+
+      const remoteHost = await loadRemoteActiveHostByCode(cleanCode, loadRemoteQuizByCode).catch(() => null);
+      if (remoteHost) {
+        const participant = await joinRemoteHostSession(remoteHost.session.id, user.display_name);
+        if (participant) {
+          setQuizzes((current) => [remoteHost.quiz, ...current]);
+          setActiveLive({ ...remoteHost, participant });
+        }
+        setMessage('');
         return;
       }
 
@@ -291,8 +365,15 @@ export default function App() {
         return;
       }
 
-      const remoteHost = await loadRemoteActiveHostByCode(cleanCode, loadRemoteQuizByCode).catch(() => null);
-      if (remoteHost) await joinRemoteHostSession(remoteHost.session.id, user.display_name).catch(() => undefined);
+      if (isGuestUser(user)) {
+        const guestHost = loadGuestActiveHostByQuiz(joinedQuiz);
+        if (guestHost) {
+          const participant = joinGuestHostSession(guestHost.id, user.display_name);
+          setActiveLive({ quiz: joinedQuiz, session: guestHost, participant });
+          setMessage('');
+          return;
+        }
+      }
       setQuizzes((current) => [joinedQuiz, ...current]);
       setMessage('');
       await handlePlay(joinedQuiz);
@@ -415,6 +496,7 @@ export default function App() {
     setActiveQuiz(null);
     setActiveAnswers([]);
     setActiveHost(null);
+    setActiveLive(null);
     window.history.pushState({}, '', '/');
   }
 
@@ -456,10 +538,32 @@ export default function App() {
     <main className="app-shell">
       {activeHost ? (
         <HostScreen
+          loadAnswers={isGuestUser(user) ? async (sessionId) => loadGuestHostAnswers(sessionId) : loadRemoteHostAnswers}
           loadParticipants={isGuestUser(user) ? async (sessionId) => loadGuestHostParticipants(sessionId) : loadRemoteHostParticipants}
+          loadSession={isGuestUser(user) ? async (sessionId) => loadGuestHostSession(sessionId) : loadRemoteHostSession}
           onClose={handleEndHost}
+          onFinish={handleFinishLiveGame}
+          onNextQuestion={handleNextLiveQuestion}
+          onStart={handleStartLiveGame}
           quiz={activeHost.quiz}
           session={activeHost.session}
+        />
+      ) : activeLive ? (
+        <LiveQuizPlayer
+          loadAnswers={isGuestUser(user) ? async (sessionId) => loadGuestHostAnswers(sessionId) : loadRemoteHostAnswers}
+          loadParticipants={isGuestUser(user) ? async (sessionId) => loadGuestHostParticipants(sessionId) : loadRemoteHostParticipants}
+          loadSession={isGuestUser(user) ? async (sessionId) => loadGuestHostSession(sessionId) : loadRemoteHostSession}
+          onAnswer={async (questionIndex, answerIndex, isCorrect) => {
+            if (isGuestUser(user)) {
+              saveGuestHostAnswer(activeLive.session.id, activeLive.participant.id, questionIndex, answerIndex, isCorrect);
+              return;
+            }
+            await saveRemoteHostAnswer(activeLive.session.id, activeLive.participant.id, questionIndex, answerIndex, isCorrect);
+          }}
+          onClose={() => setActiveLive(null)}
+          participant={activeLive.participant}
+          quiz={activeLive.quiz}
+          session={activeLive.session}
         />
       ) : (
       <>

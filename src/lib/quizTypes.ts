@@ -60,8 +60,12 @@ export type HostSession = {
   quiz_id: string;
   user_id: string;
   join_code: string;
+  status: 'lobby' | 'playing' | 'finished';
+  current_question_index: number;
   is_active: boolean;
   created_at: string;
+  started_at: string | null;
+  finished_at: string | null;
 };
 
 export type HostParticipant = {
@@ -69,4 +73,14 @@ export type HostParticipant = {
   session_id: string;
   player_name: string;
   joined_at: string;
+};
+
+export type HostAnswer = {
+  id: string;
+  session_id: string;
+  participant_id: string;
+  question_index: number;
+  answer_index: number;
+  is_correct: boolean;
+  answered_at: string;
 };
