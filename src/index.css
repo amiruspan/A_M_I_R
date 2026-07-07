@@ -265,6 +265,14 @@ h3 { font-size: 18px; }
 .user-box { display: grid; gap: 4px; justify-items: end; }
 
 .user-box small { color: var(--muted); text-transform: capitalize; }
+.user-box .header-ability {
+  max-width: 230px;
+  color: #0f7a4b;
+  font-weight: 900;
+  line-height: 1.35;
+  text-align: right;
+  text-transform: none;
+}
 .user-line { display: flex; align-items: center; gap: 8px; font-weight: 900; }
 .header-xp {
   display: grid;
