@@ -141,6 +141,7 @@ export function SkinShop({
                 <p>
                   {skin.rarity} | {skin.packOnly ? 'Pack only' : skin.price === 0 ? 'Free' : `${skin.price} coins`}
                 </p>
+                {skin.ability ? <p className="skin-ability">{skin.ability.description}</p> : null}
               </div>
               {owned ? (
                 <button disabled={busy || active} onClick={() => void runAction(() => onEquip(skin.id))} type="button">

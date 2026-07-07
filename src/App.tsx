@@ -577,6 +577,7 @@ export default function App() {
       {message && <p className="message">{message}</p>}
       {activeQuiz ? (
         <QuizPlayer
+          activeSkinId={user.active_skin_id}
           attempts={attempts}
           initialAnswers={activeAnswers}
           onClose={() => setActiveQuiz(null)}

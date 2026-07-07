@@ -7,7 +7,20 @@ export type Skin = {
   accentColor: string;
   shape: 'round' | 'bean' | 'squircle' | 'drop';
   mood: 'smile' | 'focus' | 'spark' | 'cool';
+  ability?: SkinAbility;
   packOnly?: boolean;
+};
+
+export type SkinAbility = {
+  id: 'remove_wrong_answer';
+  name: string;
+  description: string;
+};
+
+export const removeWrongAnswerAbility: SkinAbility = {
+  id: 'remove_wrong_answer',
+  name: 'Hint spark',
+  description: 'Once per quiz, remove one wrong answer.',
 };
 
 export const starterSkinId = 'classic';
@@ -122,6 +135,7 @@ export const skins: Skin[] = [
     accentColor: '#9ee6a8',
     shape: 'drop',
     mood: 'focus',
+    ability: removeWrongAnswerAbility,
   },
   {
     id: 'gold',
@@ -132,6 +146,7 @@ export const skins: Skin[] = [
     accentColor: '#ffe28a',
     shape: 'round',
     mood: 'cool',
+    ability: removeWrongAnswerAbility,
   },
   {
     id: 'crystal',
@@ -175,6 +190,7 @@ export const skins: Skin[] = [
     accentColor: '#a9f0c8',
     shape: 'round',
     mood: 'cool',
+    ability: removeWrongAnswerAbility,
     packOnly: true,
   },
   {
@@ -197,6 +213,7 @@ export const skins: Skin[] = [
     accentColor: '#b8ffd9',
     shape: 'squircle',
     mood: 'cool',
+    ability: removeWrongAnswerAbility,
     packOnly: true,
   },
 ];
