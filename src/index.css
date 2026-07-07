@@ -552,7 +552,9 @@ h3 { font-size: 18px; }
 
 .player {
   display: grid;
+  align-content: start;
   gap: 16px;
+  min-height: calc(100vh - 76px);
   overflow: hidden;
   position: relative;
   border-radius: 18px;
@@ -579,6 +581,30 @@ h3 { font-size: 18px; }
 .player > * { position: relative; }
 
 .player-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+
+.live-status-panel,
+.live-results-panel {
+  width: min(620px, 100%);
+  justify-self: center;
+}
+
+.live-status-panel {
+  min-height: 150px;
+  align-content: center;
+  text-align: center;
+}
+
+.live-results-panel {
+  justify-items: center;
+}
+
+.live-results-panel > div {
+  justify-self: stretch;
+}
+
+.live-results-panel .host-leaderboard {
+  width: min(640px, 100%);
+}
 
 .host-screen {
   min-height: calc(100vh - 56px);

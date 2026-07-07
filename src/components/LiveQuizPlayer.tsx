@@ -82,7 +82,7 @@ export function LiveQuizPlayer({
       </div>
 
       {liveSession.status === 'lobby' ? (
-        <section className="panel stack">
+        <section className="panel stack live-status-panel">
           <h2>Waiting for the host to start</h2>
           <p className="message">{participants.length} players are in the room.</p>
         </section>
@@ -112,7 +112,7 @@ export function LiveQuizPlayer({
       ) : null}
 
       {liveSession.status === 'playing' && currentQuestion && myAnswer && !allAnswered ? (
-        <section className="panel stack">
+        <section className="panel stack live-status-panel">
           <div>
             <p className="eyebrow">Answer saved</p>
             <h2>Waiting for everyone</h2>
@@ -131,7 +131,7 @@ export function LiveQuizPlayer({
       ) : null}
 
       {liveSession.status === 'finished' ? (
-        <section className="panel stack">
+        <section className="panel stack live-results-panel">
           <div>
             <p className="eyebrow">Final leaderboard</p>
             <h2>Results</h2>
