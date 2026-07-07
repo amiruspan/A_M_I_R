@@ -31,6 +31,12 @@ export function AppHeader({ language, onLanguageChange, profile, onSignOut, text
           <span className={`name-frame ${nameFrame.className}`}>{profile.display_name}</span>
         </div>
         <small>{texts.level} {levelInfo.level} | {profile.coins} {texts.coins}</small>
+        <div className="header-xp" aria-label="XP progress">
+          <span>{levelInfo.currentLevelXp}/{levelInfo.nextLevelXp} XP</span>
+          <div>
+            <strong style={{ width: `${levelInfo.percent}%` }} />
+          </div>
+        </div>
         <StreakBadge texts={texts} user={profile} />
         <LanguageToggle language={language} onChange={onLanguageChange} texts={texts} />
         <BackgroundMusicButton />
