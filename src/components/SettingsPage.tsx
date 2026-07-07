@@ -24,31 +24,31 @@ export function SettingsPage({
   return (
     <section className="panel stack">
       <div>
-        <p className="eyebrow">Settings</p>
-        <h2>App settings</h2>
+        <p className="eyebrow">{texts.settings}</p>
+        <h2>{texts.appSettings}</h2>
       </div>
 
       <div className="settings-grid">
         <article className="setting-card">
           <div>
-            <h3>Theme</h3>
-            <p>Choose a comfortable look.</p>
+            <h3>{texts.theme}</h3>
+            <p>{texts.themeHint}</p>
           </div>
-          <ThemeToggle onChange={onThemeChange} theme={theme} />
+          <ThemeToggle onChange={onThemeChange} texts={texts} theme={theme} />
         </article>
 
         <article className="setting-card">
           <div>
             <h3>{texts.language}</h3>
-            <p>Switch interface language.</p>
+            <p>{texts.switchLanguageHint}</p>
           </div>
           <LanguageToggle language={language} onChange={onLanguageChange} texts={texts} />
         </article>
 
         <article className="setting-card">
           <div>
-            <h3>Music</h3>
-            <p>Turn background music on or off.</p>
+            <h3>{texts.music}</h3>
+            <p>{texts.musicHint}</p>
           </div>
           <BackgroundMusicButton />
         </article>

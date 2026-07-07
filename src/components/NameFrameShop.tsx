@@ -1,6 +1,13 @@
 import { useState } from 'react';
+import type { Language, Texts } from '../lib/language';
 import type { NameFrame } from '../lib/nameFrameCatalog';
-import { nameFramePacks, nameFrames } from '../lib/nameFrameCatalog';
+import {
+  getNameFrameName,
+  getNameFramePackDescription,
+  getNameFramePackName,
+  nameFramePacks,
+  nameFrames,
+} from '../lib/nameFrameCatalog';
 import type { LocalUser } from '../lib/quizTypes';
 import { PackArt } from './PackArt';
 import { PackOpeningOverlay } from './PackOpeningOverlay';
@@ -11,6 +18,8 @@ type NameFrameShopProps = {
   onBuyFrame: (frameId: string) => Promise<void>;
   onEquipFrame: (frameId: string) => Promise<void>;
   onOpenFramePack: (packId: string) => Promise<void>;
+  language: Language;
+  texts: Texts;
   user: LocalUser;
 };
 
@@ -20,6 +29,8 @@ export function NameFrameShop({
   onBuyFrame,
   onEquipFrame,
   onOpenFramePack,
+  language,
+  texts,
   user,
 }: NameFrameShopProps) {
   const [openingPackId, setOpeningPackId] = useState<string | null>(null);
@@ -37,10 +48,12 @@ export function NameFrameShop({
 
   return (
     <>
-      {openingPack ? <PackOpeningOverlay pack={openingPack} /> : null}
+      {openingPack ? (
+        <PackOpeningOverlay pack={openingPack} texts={texts} title={getNameFramePackName(openingPack, language)} />
+      ) : null}
       <div>
-        <p className="eyebrow">Nickname borders</p>
-        <h2>Name styles</h2>
+        <p className="eyebrow">{texts.nicknameBorders}</p>
+        <h2>{texts.nameStyles}</h2>
       </div>
 
       <div className="pack-grid">
@@ -48,13 +61,13 @@ export function NameFrameShop({
           <article className={openingPackId === pack.id ? 'pack-card opening' : 'pack-card'} key={pack.id}>
             <PackArt opening={openingPackId === pack.id} pack={pack} />
             <div>
-              <p className="eyebrow">{pack.name}</p>
-              <h3>{pack.price} coins</h3>
-              <p>{pack.description}</p>
-              <small>Rare {pack.weights.rare}% | Epic {pack.weights.epic}% | Legend {pack.weights.legendary}%</small>
+              <p className="eyebrow">{getNameFramePackName(pack, language)}</p>
+              <h3>{pack.price} {texts.coins}</h3>
+              <p>{getNameFramePackDescription(pack, language)}</p>
+              <small>{texts.rare} {pack.weights.rare}% | {texts.epic} {pack.weights.epic}% | {texts.legend} {pack.weights.legendary}%</small>
             </div>
             <button disabled={busy || !!openingPackId || user.coins < pack.price} onClick={() => void openPack(pack.id)} type="button">
-              {openingPackId === pack.id ? 'Opening' : 'Open'}
+              {openingPackId === pack.id ? texts.opening : texts.open}
             </button>
           </article>
         ))}
@@ -64,12 +77,12 @@ export function NameFrameShop({
         <article className="pack-result">
           <span className={`name-frame ${frameResult.frame.className}`}>{user.display_name}</span>
           <div>
-            <p className="eyebrow">{frameResult.frame.rarity}</p>
-            <h3>You got {frameResult.frame.name}</h3>
+            <p className="eyebrow">{getRarityLabel(frameResult.frame.rarity, texts)}</p>
+            <h3>{texts.youGot} {getNameFrameName(frameResult.frame, language)}</h3>
             {frameResult.duplicateRefund > 0 ? (
-              <p>Duplicate reward: +{frameResult.duplicateRefund} coins back.</p>
+              <p>{texts.duplicateReward}: +{frameResult.duplicateRefund} {texts.coins}.</p>
             ) : (
-              <p>New nickname border added to your styles.</p>
+              <p>{texts.newNameFrameAdded}</p>
             )}
           </div>
         </article>
@@ -81,8 +94,10 @@ export function NameFrameShop({
             frame={frame}
             busy={busy}
             key={frame.id}
+            language={language}
             onBuyFrame={onBuyFrame}
             onEquipFrame={onEquipFrame}
+            texts={texts}
             user={user}
           />
         ))}
@@ -94,14 +109,18 @@ export function NameFrameShop({
 function FrameCard({
   frame,
   busy,
+  language,
   onBuyFrame,
   onEquipFrame,
+  texts,
   user,
 }: {
   frame: NameFrame;
   busy: boolean;
+  language: Language;
   onBuyFrame: (frameId: string) => Promise<void>;
   onEquipFrame: (frameId: string) => Promise<void>;
+  texts: Texts;
   user: LocalUser;
 }) {
   const owned = user.owned_name_frame_ids.includes(frame.id);
@@ -113,18 +132,25 @@ function FrameCard({
     <article className={active ? 'frame-card active' : 'frame-card'}>
       <span className={`name-frame ${frame.className}`}>{user.display_name}</span>
       <div>
-        <h3>{frame.name}</h3>
-        <p>{frame.rarity} | {frame.packOnly ? 'Pack only' : frame.price === 0 ? 'Free' : `${frame.price} coins`}</p>
+        <h3>{getNameFrameName(frame, language)}</h3>
+        <p>{getRarityLabel(frame.rarity, texts)} | {frame.packOnly ? texts.packOnly : frame.price === 0 ? texts.free : `${frame.price} ${texts.coins}`}</p>
       </div>
       {owned ? (
         <button disabled={busy || active} onClick={() => void onEquipFrame(frame.id)} type="button">
-          {active ? 'Equipped' : 'Equip'}
+          {active ? texts.equipped : texts.equip}
         </button>
       ) : packOnly ? (
-        <button disabled type="button">Pack only</button>
+        <button disabled type="button">{texts.packOnly}</button>
       ) : (
-        <button disabled={busy || !canBuy} onClick={() => void onBuyFrame(frame.id)} type="button">Buy</button>
+        <button disabled={busy || !canBuy} onClick={() => void onBuyFrame(frame.id)} type="button">{texts.buy}</button>
       )}
     </article>
   );
+}
+
+function getRarityLabel(rarity: NameFrame['rarity'], texts: Texts) {
+  if (rarity === 'common') return texts.common;
+  if (rarity === 'rare') return texts.rare;
+  if (rarity === 'epic') return texts.epic;
+  return texts.legendary;
 }

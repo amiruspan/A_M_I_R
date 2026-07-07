@@ -1,3 +1,4 @@
+import type { Texts } from './language';
 import type { Quiz } from './quizTypes';
 
 export const skippedAnswer = -1;
@@ -15,12 +16,12 @@ export function getQuestionSeconds(mode: Quiz['game_mode']) {
   return 20;
 }
 
-export function getModeDescription(mode: Quiz['game_mode']) {
-  if (mode === 'hardcore') return 'Hardcore: one mistake ends the run.';
-  if (mode === 'blitz') return 'Blitz: only 8 seconds for each question.';
-  if (mode === 'practice') return 'Practice: no timer, learn calmly.';
-  if (mode === 'final_boss') return 'Final Boss: 10 seconds and one mistake ends the run.';
-  return 'Normal mode: answer all questions before time runs out.';
+export function getModeDescription(mode: Quiz['game_mode'], texts: Texts) {
+  if (mode === 'hardcore') return texts.hardcoreModeDescription;
+  if (mode === 'blitz') return texts.blitzModeDescription;
+  if (mode === 'practice') return texts.practiceModeDescription;
+  if (mode === 'final_boss') return texts.finalBossModeDescription;
+  return texts.normalModeDescription;
 }
 
 export function getAnswerClass(selectedAnswer: number | undefined, answerIndex: number, removedAnswer?: number) {

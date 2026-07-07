@@ -1,9 +1,10 @@
 import { useState } from 'react';
+import type { Language, Texts } from '../lib/language';
 import type { LocalUser } from '../lib/quizTypes';
 import type { NameFrame } from '../lib/nameFrameCatalog';
-import { skinPacks } from '../lib/packCatalog';
+import { getPackDescription, getPackName, skinPacks } from '../lib/packCatalog';
 import type { Skin } from '../lib/skinCatalog';
-import { skins } from '../lib/skinCatalog';
+import { getSkinName, skins } from '../lib/skinCatalog';
 import { NameFrameShop } from './NameFrameShop';
 import { PackArt } from './PackArt';
 import { PackOpeningOverlay } from './PackOpeningOverlay';
@@ -18,7 +19,9 @@ type SkinShopProps = {
   onOpenFramePack: (packId: string) => Promise<void>;
   onOpenPack: (packId: string) => Promise<void>;
   frameResult: { frame: NameFrame; duplicateRefund: number } | null;
+  language: Language;
   packResult: { skin: Skin; duplicateRefund: number } | null;
+  texts: Texts;
 };
 
 export function SkinShop({
@@ -30,7 +33,9 @@ export function SkinShop({
   onOpenFramePack,
   onOpenPack,
   frameResult,
+  language,
   packResult,
+  texts,
 }: SkinShopProps) {
   const [openingPackId, setOpeningPackId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -72,11 +77,13 @@ export function SkinShop({
 
   return (
     <section className="panel stack">
-      {openingPack ? <PackOpeningOverlay pack={openingPack} /> : null}
+      {openingPack ? (
+        <PackOpeningOverlay pack={openingPack} texts={texts} title={getPackName(openingPack, language)} />
+      ) : null}
       <div>
-        <p className="eyebrow">Shop</p>
-        <h2>Skins</h2>
-        <p className="message">You have {user.coins} coins.</p>
+        <p className="eyebrow">{texts.shopTitle}</p>
+        <h2>{texts.skins}</h2>
+        <p className="message">{texts.youHaveCoins} {user.coins} {texts.coins}.</p>
       </div>
 
       <div className="pack-grid">
@@ -84,11 +91,11 @@ export function SkinShop({
           <article className={openingPackId === pack.id ? 'pack-card opening' : 'pack-card'} key={pack.id}>
             <PackArt opening={openingPackId === pack.id} pack={pack} />
             <div>
-              <p className="eyebrow">{pack.name}</p>
-              <h3>{pack.price} coins</h3>
-              <p>{pack.description}</p>
+              <p className="eyebrow">{getPackName(pack, language)}</p>
+              <h3>{pack.price} {texts.coins}</h3>
+              <p>{getPackDescription(pack, language)}</p>
               <small>
-                Rare {pack.weights.rare}% | Epic {pack.weights.epic}% | Legend {pack.weights.legendary}%
+                {texts.rare} {pack.weights.rare}% | {texts.epic} {pack.weights.epic}% | {texts.legend} {pack.weights.legendary}%
               </small>
             </div>
             <button
@@ -96,7 +103,7 @@ export function SkinShop({
               onClick={() => void openPack(pack.id)}
               type="button"
             >
-              {openingPackId === pack.id ? 'Opening' : 'Open'}
+              {openingPackId === pack.id ? texts.opening : texts.open}
             </button>
           </article>
         ))}
@@ -104,14 +111,14 @@ export function SkinShop({
 
       {packResult ? (
         <article className="pack-result">
-          <SkinBadge skinId={packResult.skin.id} />
+          <SkinBadge language={language} skinId={packResult.skin.id} />
           <div>
-            <p className="eyebrow">{packResult.skin.rarity}</p>
-            <h3>You got {packResult.skin.name}</h3>
+            <p className="eyebrow">{getRarityLabel(packResult.skin.rarity, texts)}</p>
+            <h3>{texts.youGot} {getSkinName(packResult.skin, language)}</h3>
             {packResult.duplicateRefund > 0 ? (
-              <p>Duplicate reward: +{packResult.duplicateRefund} coins back.</p>
+              <p>{texts.duplicateReward}: +{packResult.duplicateRefund} {texts.coins}.</p>
             ) : (
-              <p>New character added to your skins.</p>
+              <p>{texts.newCharacterAdded}</p>
             )}
           </div>
         </article>
@@ -123,6 +130,8 @@ export function SkinShop({
         onBuyFrame={(frameId) => runAction(() => onBuyFrame(frameId))}
         onEquipFrame={(frameId) => runAction(() => onEquipFrame(frameId))}
         onOpenFramePack={openFramePack}
+        language={language}
+        texts={texts}
         user={user}
       />
 
@@ -135,25 +144,25 @@ export function SkinShop({
 
           return (
             <article className={active ? 'skin-card active' : 'skin-card'} key={skin.id}>
-              <SkinBadge skinId={skin.id} />
+              <SkinBadge language={language} skinId={skin.id} />
               <div>
-                <h3>{skin.name}</h3>
-                {skin.ability ? <p className="skin-ability">Ability: {skin.ability.description}</p> : null}
+                <h3>{getSkinName(skin, language)}</h3>
+                {skin.ability ? <p className="skin-ability">{texts.ability}: {texts.removeWrongAnswerAbility}</p> : null}
                 <p>
-                  {skin.rarity} | {skin.packOnly ? 'Pack only' : skin.price === 0 ? 'Free' : `${skin.price} coins`}
+                  {getRarityLabel(skin.rarity, texts)} | {skin.packOnly ? texts.packOnly : skin.price === 0 ? texts.free : `${skin.price} ${texts.coins}`}
                 </p>
               </div>
               {owned ? (
                 <button disabled={busy || active} onClick={() => void runAction(() => onEquip(skin.id))} type="button">
-                  {active ? 'Equipped' : 'Equip'}
+                  {active ? texts.equipped : texts.equip}
                 </button>
               ) : packOnly ? (
                 <button disabled type="button">
-                  Pack only
+                  {texts.packOnly}
                 </button>
               ) : (
                 <button disabled={busy || !canBuy} onClick={() => void runAction(() => onBuy(skin.id))} type="button">
-                  Buy
+                  {texts.buy}
                 </button>
               )}
             </article>
@@ -162,4 +171,11 @@ export function SkinShop({
       </div>
     </section>
   );
+}
+
+function getRarityLabel(rarity: Skin['rarity'], texts: Texts) {
+  if (rarity === 'common') return texts.common;
+  if (rarity === 'rare') return texts.rare;
+  if (rarity === 'epic') return texts.epic;
+  return texts.legendary;
 }

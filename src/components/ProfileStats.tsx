@@ -1,8 +1,10 @@
 import type { Attempt, LocalUser, Quiz } from '../lib/quizTypes';
-import type { Texts } from '../lib/language';
+import type { Language, Texts } from '../lib/language';
 import {
   canClaimDailyBonus,
   dailyBonusCoins,
+  getBadgeDescription,
+  getBadgeName,
   getEarnedBadges,
   getLevelInfo,
   isStreakOnFire,
@@ -10,13 +12,14 @@ import {
 
 type ProfileStatsProps = {
   attempts: Attempt[];
+  language: Language;
   onClaimDailyBonus: () => Promise<void>;
   quizzes: Quiz[];
   texts: Texts;
   user: LocalUser;
 };
 
-export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user }: ProfileStatsProps) {
+export function ProfileStats({ attempts, language, onClaimDailyBonus, quizzes, texts, user }: ProfileStatsProps) {
   const userAttempts = attempts.filter((attempt) => attempt.user_id === user.user_id);
   const totalQuizzes = userAttempts.length;
   const totalCorrect = userAttempts.reduce((sum, attempt) => sum + attempt.score, 0);
@@ -35,7 +38,7 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user
   return (
     <section className="panel stack">
       <div>
-        <p className="eyebrow">Stats</p>
+        <p className="eyebrow">{texts.stats}</p>
         <h2>{texts.profile}</h2>
       </div>
 
@@ -44,14 +47,14 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user
         <StatCard label="XP" value={`${levelInfo.currentLevelXp}/${levelInfo.nextLevelXp}`} />
         <StatCard label={texts.explore} value={String(totalQuizzes)} />
         <StatCard label={texts.correctAnswers} value={`${totalCorrect}/${totalQuestions}`} />
-        <StatCard label="Average" value={`${averageScore}%`} />
+        <StatCard label={texts.average} value={`${averageScore}%`} />
         <StatCard label={texts.coins} value={String(user.coins)} />
         <StatCard label={streakActive ? texts.dayStreak : texts.newStreak} value={String(user.login_streak)} />
       </div>
 
-      <div className="xp-progress" aria-label="Level progress">
+      <div className="xp-progress" aria-label={texts.levelProgress}>
         <div className="xp-progress-top">
-          <span>Level {levelInfo.level}</span>
+          <span>{texts.level} {levelInfo.level}</span>
           <strong>{levelInfo.percent}%</strong>
         </div>
         <div className="level-track">
@@ -60,7 +63,7 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user
           </div>
         </div>
         <p className="xp-progress-caption">
-          {levelInfo.currentLevelXp} / {levelInfo.nextLevelXp} XP to level {levelInfo.level + 1}
+          {levelInfo.currentLevelXp} / {levelInfo.nextLevelXp} {texts.xpToLevel} {levelInfo.level + 1}
         </p>
       </div>
 
@@ -80,8 +83,8 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user
       <div className="badge-grid">
         {earnedBadges.map((badge) => (
           <article className={badge.earned ? 'badge-card earned' : 'badge-card'} key={badge.id}>
-            <strong>{badge.name}</strong>
-            <span>{badge.description}</span>
+            <strong>{getBadgeName(badge, language)}</strong>
+            <span>{getBadgeDescription(badge, language)}</span>
           </article>
         ))}
       </div>

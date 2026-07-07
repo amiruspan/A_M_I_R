@@ -1,3 +1,5 @@
+import type { Language } from './language';
+
 export type Skin = {
   id: string;
   name: string;
@@ -220,4 +222,30 @@ export const skins: Skin[] = [
 
 export function getSkin(skinId: string) {
   return skins.find((skin) => skin.id === skinId) ?? skins[0];
+}
+
+const russianSkinNames: Record<string, string> = {
+  classic: 'Классический синий',
+  mint: 'Мятный фокус',
+  sunset: 'Золотой закат',
+  berry: 'Ягодный квиз',
+  ocean: 'Океанская улыбка',
+  lime: 'Лаймовая искра',
+  ruby: 'Рубиновый фокус',
+  midnight: 'Ночной стиль',
+  coral: 'Коралловая улыбка',
+  royal: 'Королевская искра',
+  forest: 'Лесной фокус',
+  gold: 'Золотая легенда',
+  crystal: 'Кристальный блеск',
+  ember: 'Огненный друг',
+  plasma: 'Плазменный поп',
+  jade: 'Нефритовый гений',
+  cosmo: 'Космо-корона',
+  aurora: 'Аврора ас',
+};
+
+export function getSkinName(skinOrId: Skin | string, language: Language) {
+  const skin = typeof skinOrId === 'string' ? getSkin(skinOrId) : skinOrId;
+  return language === 'ru' ? russianSkinNames[skin.id] ?? skin.name : skin.name;
 }

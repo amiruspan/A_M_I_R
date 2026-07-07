@@ -33,15 +33,15 @@ export function QuizList({ attempts, currentUserId, onHost, onPlay, quizzes, tex
             </div>
             <div className="quiz-meta">
               <span>{texts.code}: {quiz.share_code}</span>
-              <span>{getModeLabel(quiz.game_mode)}</span>
+              <span>{getModeLabel(quiz.game_mode, texts)}</span>
               {best && <span>{texts.best}: {best.score}/{best.total}</span>}
             </div>
-            <PrizeBoard attempts={attempts} quizId={quiz.id} />
+            <PrizeBoard attempts={attempts} quizId={quiz.id} texts={texts} />
             <div className="button-row">
               <button onClick={() => void onPlay(quiz)} type="button">{texts.explore}</button>
               {quiz.user_id === currentUserId && onHost ? (
                 <button className="secondary-button" onClick={() => void onHost(quiz)} type="button">
-                  Host
+                  {texts.host}
                 </button>
               ) : null}
             </div>
@@ -52,10 +52,10 @@ export function QuizList({ attempts, currentUserId, onHost, onPlay, quizzes, tex
   );
 }
 
-function getModeLabel(mode: Quiz['game_mode']) {
-  if (mode === 'hardcore') return 'Hardcore';
-  if (mode === 'blitz') return 'Blitz';
-  if (mode === 'practice') return 'Practice';
-  if (mode === 'final_boss') return 'Final Boss';
-  return 'Normal';
+function getModeLabel(mode: Quiz['game_mode'], texts: Texts) {
+  if (mode === 'hardcore') return texts.hardcore;
+  if (mode === 'blitz') return texts.blitz;
+  if (mode === 'practice') return texts.practice;
+  if (mode === 'final_boss') return texts.finalBoss;
+  return texts.normal;
 }

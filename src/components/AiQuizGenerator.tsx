@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import type { Texts } from '../lib/language';
 import { generateQuizDraft, type AiQuizDraft } from '../lib/aiQuiz';
 
 type AiQuizGeneratorProps = {
   onGenerated: (draft: AiQuizDraft) => void;
+  texts: Texts;
 };
 
 const questionCounts = [4, 6, 8];
 
-export function AiQuizGenerator({ onGenerated }: AiQuizGeneratorProps) {
+export function AiQuizGenerator({ onGenerated, texts }: AiQuizGeneratorProps) {
   const [topic, setTopic] = useState('');
   const [questionCount, setQuestionCount] = useState(4);
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export function AiQuizGenerator({ onGenerated }: AiQuizGeneratorProps) {
       const draft = await generateQuizDraft(topic.trim(), questionCount);
       onGenerated(draft);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : 'Could not generate quiz.');
+      setError(caughtError instanceof Error ? caughtError.message : texts.couldNotGenerateQuiz);
     } finally {
       setBusy(false);
     }
@@ -30,13 +32,13 @@ export function AiQuizGenerator({ onGenerated }: AiQuizGeneratorProps) {
   return (
     <section className="ai-generator stack">
       <div>
-        <p className="eyebrow">AI helper</p>
-        <h3>Generate quiz draft</h3>
+        <p className="eyebrow">{texts.aiHelper}</p>
+        <h3>{texts.generateQuizDraft}</h3>
       </div>
       <input
         disabled={busy}
         onChange={(event) => setTopic(event.target.value)}
-        placeholder="Topic, for example: Kazakhstan history"
+        placeholder={texts.topicPlaceholder}
         value={topic}
       />
       <div className="button-row">
@@ -48,13 +50,13 @@ export function AiQuizGenerator({ onGenerated }: AiQuizGeneratorProps) {
             onClick={() => setQuestionCount(count)}
             type="button"
           >
-            {count} questions
+            {count} {texts.questions}
           </button>
         ))}
       </div>
       {error && <p className="message">{error}</p>}
       <button disabled={busy || !topic.trim()} onClick={handleGenerate} type="button">
-        {busy ? 'Generating...' : 'Generate with AI'}
+        {busy ? texts.generating : texts.generateWithAi}
       </button>
     </section>
   );

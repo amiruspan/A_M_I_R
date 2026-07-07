@@ -1,3 +1,5 @@
+import type { Language } from './language';
+
 export type NameFrame = {
   id: string;
   name: string;
@@ -66,6 +68,37 @@ export const nameFramePacks: NameFramePack[] = [
 
 export function getNameFrame(frameId: string) {
   return nameFrames.find((frame) => frame.id === frameId) ?? nameFrames[0];
+}
+
+const russianFrameNames: Record<string, string> = {
+  plain: 'Обычный',
+  silver: 'Серебряная линия',
+  leaf: 'Листовое сияние',
+  sun: 'Солнечная рамка',
+  berry: 'Ягодный поп',
+  royal: 'Королевская рамка',
+  neon: 'Неоновый пульс',
+  frost: 'Ледяная корона',
+  mythic: 'Мифический ореол',
+};
+
+const russianFramePackText: Record<string, { name: string; description: string }> = {
+  'border-pack': {
+    name: 'Пак рамок',
+    description: 'Даёт одну эксклюзивную рамку ника.',
+  },
+};
+
+export function getNameFrameName(frame: NameFrame, language: Language) {
+  return language === 'ru' ? russianFrameNames[frame.id] ?? frame.name : frame.name;
+}
+
+export function getNameFramePackName(pack: NameFramePack, language: Language) {
+  return language === 'ru' ? russianFramePackText[pack.id]?.name ?? pack.name : pack.name;
+}
+
+export function getNameFramePackDescription(pack: NameFramePack, language: Language) {
+  return language === 'ru' ? russianFramePackText[pack.id]?.description ?? pack.description : pack.description;
 }
 
 export function getNameFramePack(packId: string) {

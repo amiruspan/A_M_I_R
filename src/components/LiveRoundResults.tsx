@@ -1,3 +1,4 @@
+import type { Texts } from '../lib/language';
 import type { HostAnswer, HostParticipant, QuizQuestion } from '../lib/quizTypes';
 
 type LiveRoundResultsProps = {
@@ -5,6 +6,7 @@ type LiveRoundResultsProps = {
   participants: HostParticipant[];
   question: QuizQuestion;
   questionIndex: number;
+  texts: Texts;
 };
 
 export function LiveRoundResults({
@@ -12,12 +14,13 @@ export function LiveRoundResults({
   participants,
   question,
   questionIndex,
+  texts,
 }: LiveRoundResultsProps) {
   return (
     <section className="panel stack">
       <div>
-        <p className="eyebrow">Round results</p>
-        <h2>Correct answer: {question.options[question.correctIndex]}</h2>
+        <p className="eyebrow">{texts.roundResults}</p>
+        <h2>{texts.correctAnswer}: {question.options[question.correctIndex]}</h2>
       </div>
       <ol className="prize-board">
         {participants.map((participant) => {
@@ -27,9 +30,9 @@ export function LiveRoundResults({
           ));
           return (
             <li key={participant.id}>
-              <span className="place-badge">{answer?.is_correct ? 'Correct' : 'Wrong'}</span>
+              <span className="place-badge">{answer?.is_correct ? texts.correct : texts.wrong}</span>
               <span>{participant.player_name}</span>
-              <strong>{answer ? question.options[answer.answer_index] : 'No answer'}</strong>
+              <strong>{answer ? question.options[answer.answer_index] : texts.noAnswer}</strong>
             </li>
           );
         })}

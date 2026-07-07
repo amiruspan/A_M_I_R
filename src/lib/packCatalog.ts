@@ -1,3 +1,4 @@
+import type { Language } from './language';
 import type { Skin } from './skinCatalog';
 import { skins } from './skinCatalog';
 
@@ -34,6 +35,25 @@ export const skinPacks: SkinPack[] = [
 
 export function getPack(packId: string) {
   return skinPacks.find((pack) => pack.id === packId) ?? skinPacks[0];
+}
+
+const russianPackText: Record<string, { name: string; description: string }> = {
+  'starter-pack': {
+    name: 'Удачный пак',
+    description: 'Открывает одного персонажа только из пака.',
+  },
+  'rare-pack': {
+    name: 'Пак охотника за редкими',
+    description: 'Больше шанс получить эпических и легендарных персонажей.',
+  },
+};
+
+export function getPackName(pack: SkinPack, language: Language) {
+  return language === 'ru' ? russianPackText[pack.id]?.name ?? pack.name : pack.name;
+}
+
+export function getPackDescription(pack: SkinPack, language: Language) {
+  return language === 'ru' ? russianPackText[pack.id]?.description ?? pack.description : pack.description;
 }
 
 export function pickSkinFromPack(pack: SkinPack) {

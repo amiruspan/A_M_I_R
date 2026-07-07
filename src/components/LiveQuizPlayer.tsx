@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { HostLeaderboard } from './HostLeaderboard';
 import { LiveRoundResults } from './LiveRoundResults';
+import type { Texts } from '../lib/language';
 import type { HostAnswer, HostParticipant, HostSession, Quiz } from '../lib/quizTypes';
 
 type LiveQuizPlayerProps = {
@@ -12,6 +13,7 @@ type LiveQuizPlayerProps = {
   participant: HostParticipant;
   quiz: Quiz;
   session: HostSession;
+  texts: Texts;
 };
 
 export function LiveQuizPlayer({
@@ -23,6 +25,7 @@ export function LiveQuizPlayer({
   participant,
   quiz,
   session,
+  texts,
 }: LiveQuizPlayerProps) {
   const [liveSession, setLiveSession] = useState(session);
   const [participants, setParticipants] = useState<HostParticipant[]>([]);
@@ -74,25 +77,25 @@ export function LiveQuizPlayer({
     <section className="player">
       <div className="player-header">
         <div>
-          <p className="eyebrow">Live game</p>
+          <p className="eyebrow">{texts.liveGame}</p>
           <h2>{quiz.title}</h2>
-          <p className="message">You joined as {participant.player_name}</p>
+          <p className="message">{texts.joinedAs} {participant.player_name}</p>
         </div>
-        <button className="secondary-button" onClick={onClose} type="button">Close</button>
+        <button className="secondary-button" onClick={onClose} type="button">{texts.close}</button>
       </div>
 
       {liveSession.status === 'lobby' ? (
         <section className="panel stack live-status-panel">
-          <h2>Waiting for the host to start</h2>
-          <p className="message">{participants.length} players are in the room.</p>
+          <h2>{texts.waitingForHost}</h2>
+          <p className="message">{participants.length} {texts.playersInRoom}</p>
         </section>
       ) : null}
 
       {liveSession.status === 'playing' && currentQuestion && !myAnswer ? (
         <div className="question-card">
           <div className="question-meta">
-            <span>Question {liveSession.current_question_index + 1} / {quiz.questions.length}</span>
-            <span>Choose an answer</span>
+            <span>{texts.question} {liveSession.current_question_index + 1} / {quiz.questions.length}</span>
+            <span>{texts.chooseAnswer}</span>
           </div>
           <h3>{currentQuestion.text}</h3>
           <div className="answer-grid">
@@ -114,10 +117,10 @@ export function LiveQuizPlayer({
       {liveSession.status === 'playing' && currentQuestion && myAnswer && !allAnswered ? (
         <section className="panel stack live-status-panel">
           <div>
-            <p className="eyebrow">Answer saved</p>
-            <h2>Waiting for everyone</h2>
+            <p className="eyebrow">{texts.answerSaved}</p>
+            <h2>{texts.waitingForEveryone}</h2>
           </div>
-          <p className="message">{answeredCount} / {participants.length} players answered.</p>
+          <p className="message">{answeredCount} / {participants.length} {texts.playersAnswered}</p>
         </section>
       ) : null}
 
@@ -127,16 +130,17 @@ export function LiveQuizPlayer({
           participants={participants}
           question={currentQuestion}
           questionIndex={liveSession.current_question_index}
+          texts={texts}
         />
       ) : null}
 
       {liveSession.status === 'finished' ? (
         <section className="panel stack live-results-panel">
           <div>
-            <p className="eyebrow">Final leaderboard</p>
-            <h2>Results</h2>
+            <p className="eyebrow">{texts.finalLeaderboard}</p>
+            <h2>{texts.results}</h2>
           </div>
-          <HostLeaderboard answers={answers} participants={participants} quiz={quiz} />
+          <HostLeaderboard answers={answers} participants={participants} quiz={quiz} texts={texts} />
         </section>
       ) : null}
     </section>

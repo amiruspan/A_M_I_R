@@ -26,7 +26,14 @@ export function QuizFinishedView({
 }: QuizFinishedViewProps) {
   return (
     <div className="stack">
-      <QuizResultStats answers={answers} failedHardcore={failedHardcore} onClose={onClose} quiz={quiz} score={score} />
+      <QuizResultStats
+        answers={answers}
+        failedHardcore={failedHardcore}
+        onClose={onClose}
+        quiz={quiz}
+        score={score}
+        texts={texts}
+      />
       <section className="panel">
         <p className="eyebrow">{texts.coins}</p>
         <h2>+{score * rewardPerCorrectAnswer} {texts.coins}</h2>
@@ -34,7 +41,7 @@ export function QuizFinishedView({
       </section>
       <section className="panel stack">
         <h2>{texts.best}</h2>
-        <PrizeBoard attempts={attempts} quizId={quiz.id} />
+        <PrizeBoard attempts={attempts} quizId={quiz.id} texts={texts} />
       </section>
     </div>
   );

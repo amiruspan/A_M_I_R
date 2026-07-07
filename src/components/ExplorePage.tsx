@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import type { Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
 import { JoinQuizCard } from './JoinQuizCard';
+import { LevelPlaylist } from './LevelPlaylist';
 import { QuizList } from './QuizList';
 import { ResultsPanel } from './ResultsPanel';
 
@@ -29,6 +30,7 @@ export function ExplorePage({ attempts, currentUserId, onJoin, onPlay, quizzes, 
             <h2>{texts.explore}</h2>
             <p className="message">{texts.welcomeOneText}</p>
           </div>
+          <LevelPlaylist attempts={attempts} onPlay={onPlay} quizzes={quizzes} texts={texts} />
           <input
             onChange={(event) => setSearch(event.target.value)}
             placeholder={texts.search}

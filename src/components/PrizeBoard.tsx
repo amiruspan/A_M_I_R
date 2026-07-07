@@ -1,13 +1,13 @@
+import type { Texts } from '../lib/language';
 import type { Attempt } from '../lib/quizTypes';
 
 type PrizeBoardProps = {
   attempts: Attempt[];
   quizId: string;
+  texts: Texts;
 };
 
-const prizeLabels = ['1 place', '2 place', '3 place'];
-
-export function PrizeBoard({ attempts, quizId }: PrizeBoardProps) {
+export function PrizeBoard({ attempts, quizId, texts }: PrizeBoardProps) {
   const winners = attempts
     .filter((attempt) => attempt.quiz_id === quizId)
     .sort((a, b) => {
@@ -17,14 +17,14 @@ export function PrizeBoard({ attempts, quizId }: PrizeBoardProps) {
     .slice(0, 3);
 
   if (winners.length === 0) {
-    return <p className="empty">Prize places will appear after players finish.</p>;
+    return <p className="empty">{texts.prizePlacesEmpty}</p>;
   }
 
   return (
     <ol className="prize-board">
       {winners.map((attempt, index) => (
         <li key={attempt.id}>
-          <span className="place-badge">{prizeLabels[index]}</span>
+          <span className="place-badge">{index + 1} {texts.place}</span>
           <span>{attempt.player_name}</span>
           <strong>{attempt.score}/{attempt.total}</strong>
         </li>

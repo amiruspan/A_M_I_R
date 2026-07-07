@@ -23,7 +23,7 @@ export function PublishPage({ attempts, currentUserId, onCreate, onHost, onPlay,
 
   return (
     <div className="stack">
-      <QuizForm onCreate={onCreate} />
+      <QuizForm onCreate={onCreate} texts={texts} />
       <section className="panel stack">
         <h2>{texts.publish}</h2>
         <QuizList

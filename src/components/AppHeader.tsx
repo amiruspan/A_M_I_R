@@ -1,5 +1,5 @@
 import type { Profile } from '../lib/quizTypes';
-import type { Texts } from '../lib/language';
+import type { Language, Texts } from '../lib/language';
 import { getNameFrame } from '../lib/nameFrameCatalog';
 import { getLevelInfo } from '../lib/profileProgress';
 import { getSkin } from '../lib/skinCatalog';
@@ -7,11 +7,13 @@ import { SkinBadge } from './SkinBadge';
 import { StreakBadge } from './StreakBadge';
 
 type AppHeaderProps = {
+  language: Language;
   profile: Profile;
   texts: Texts;
 };
 
 export function AppHeader({
+  language,
   profile,
   texts,
 }: AppHeaderProps) {
@@ -27,12 +29,12 @@ export function AppHeader({
       </div>
       <div className="user-box">
         <div className="user-line">
-          <SkinBadge skinId={profile.active_skin_id} />
+          <SkinBadge language={language} skinId={profile.active_skin_id} />
           <span className={`name-frame ${nameFrame.className}`}>{profile.display_name}</span>
         </div>
-        {activeSkin.ability ? <small className="header-ability">Ability: {activeSkin.ability.description}</small> : null}
+        {activeSkin.ability ? <small className="header-ability">{texts.ability}: {texts.removeWrongAnswerAbility}</small> : null}
         <small>{texts.level} {levelInfo.level} | {profile.coins} {texts.coins}</small>
-        <div className="header-xp" aria-label="XP progress">
+        <div className="header-xp" aria-label={texts.levelProgress}>
           <span>{levelInfo.currentLevelXp}/{levelInfo.nextLevelXp} XP</span>
           <div>
             <strong style={{ width: `${levelInfo.percent}%` }} />

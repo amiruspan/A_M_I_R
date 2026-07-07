@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { HostLeaderboard } from './HostLeaderboard';
 import { LiveRoundResults } from './LiveRoundResults';
+import type { Texts } from '../lib/language';
 import type { HostAnswer, HostParticipant, HostSession, Quiz } from '../lib/quizTypes';
 import { countQuestionAnswers, getHostTitle } from '../lib/hostLeaderboard';
 
@@ -14,6 +15,7 @@ type HostScreenProps = {
   onStart: () => Promise<void>;
   quiz: Quiz;
   session: HostSession;
+  texts: Texts;
 };
 
 export function HostScreen({
@@ -26,6 +28,7 @@ export function HostScreen({
   onStart,
   quiz,
   session,
+  texts,
 }: HostScreenProps) {
   const [liveSession, setLiveSession] = useState(session);
   const [participants, setParticipants] = useState<HostParticipant[]>([]);
@@ -83,31 +86,31 @@ export function HostScreen({
     <section className="host-screen">
       <header className="host-topbar">
         <div>
-          <p className="eyebrow">Live host</p>
+          <p className="eyebrow">{texts.liveHost}</p>
           <h1>{quiz.title}</h1>
         </div>
         <button className="secondary-button" onClick={() => void onClose()} type="button">
-          End host
+          {texts.endHost}
         </button>
       </header>
 
       {liveSession.status === 'lobby' ? (
         <div className="host-code-panel">
-          <span>Join code</span>
+          <span>{texts.joinCode}</span>
           <strong>{session.join_code}</strong>
           <button onClick={() => void copyJoinLink()} type="button">
-            {copied ? 'Copied' : 'Copy join link'}
+            {copied ? texts.copied : texts.copyJoinLink}
           </button>
         </div>
       ) : null}
 
       <section className={liveSession.status === 'lobby' ? 'host-players host-lobby' : 'host-players'}>
         <div>
-          <p className="eyebrow">{liveSession.status === 'lobby' ? 'Players joined' : 'Live round'}</p>
-          <h2>{getHostTitle(liveSession, quiz.questions.length)}</h2>
+          <p className="eyebrow">{liveSession.status === 'lobby' ? texts.playersJoined : texts.liveRound}</p>
+          <h2>{getHostTitle(liveSession, quiz.questions.length, texts)}</h2>
         </div>
         {liveSession.status === 'lobby' && participants.length === 0 ? (
-          <p className="empty">Waiting for players to enter the code.</p>
+          <p className="empty">{texts.waitingForPlayers}</p>
         ) : null}
         {liveSession.status === 'lobby' && participants.length > 0 ? (
           <ul className="host-player-grid">
@@ -118,27 +121,28 @@ export function HostScreen({
         ) : null}
         {liveSession.status === 'lobby' ? (
           <button disabled={participants.length === 0} onClick={() => void onStart()} type="button">
-            Start game
+            {texts.startGame}
           </button>
         ) : null}
         {liveSession.status === 'playing' ? (
           <div className="stack">
-            <p className="message">{answeredCount} / {participants.length} players answered.</p>
+            <p className="message">{answeredCount} / {participants.length} {texts.playersAnswered}</p>
             {allAnswered && currentQuestion ? (
               <LiveRoundResults
                 answers={answers}
                 participants={participants}
                 question={currentQuestion}
                 questionIndex={liveSession.current_question_index}
+                texts={texts}
               />
             ) : null}
             <button disabled={!allAnswered} onClick={() => void handleNext()} type="button">
-              {isLastQuestion ? 'Show leaderboard' : 'Next question'}
+              {isLastQuestion ? texts.showLeaderboard : texts.nextQuestion}
             </button>
           </div>
         ) : null}
         {liveSession.status === 'finished' ? (
-          <HostLeaderboard answers={answers} participants={participants} quiz={quiz} />
+          <HostLeaderboard answers={answers} participants={participants} quiz={quiz} texts={texts} />
         ) : null}
       </section>
     </section>

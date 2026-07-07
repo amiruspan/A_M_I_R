@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
+import type { Language } from '../lib/language';
 import type { Quiz } from '../lib/quizTypes';
 import { playLoseSound, playWinSound } from '../lib/quizSounds';
-import { getSkin } from '../lib/skinCatalog';
+import { getSkin, getSkinName } from '../lib/skinCatalog';
 import { getQuestionSeconds, getScore, skippedAnswer } from '../lib/quizPlayerRules';
 
 type UseQuizPlayerStateParams = {
   activeSkinId: string;
   initialAnswers: number[];
+  language: Language;
   onFinish: (score: number, total: number) => Promise<void>;
   onProgress: (answers: number[]) => Promise<void>;
   quiz: Quiz;
@@ -15,6 +17,7 @@ type UseQuizPlayerStateParams = {
 export function useQuizPlayerState({
   activeSkinId,
   initialAnswers,
+  language,
   onFinish,
   onProgress,
   quiz,
@@ -142,7 +145,7 @@ export function useQuizPlayerState({
     removedAnswer,
     score: getScore(quiz, answers),
     secondsLeft,
-    skinName: activeSkin.name,
+    skinName: getSkinName(activeSkin, language),
     skinAbility,
     useSkinAbility,
   };

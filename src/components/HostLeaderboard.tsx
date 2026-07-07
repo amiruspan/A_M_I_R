@@ -1,3 +1,4 @@
+import type { Texts } from '../lib/language';
 import type { HostAnswer, HostParticipant, Quiz } from '../lib/quizTypes';
 import { buildHostLeaderboard } from '../lib/hostLeaderboard';
 
@@ -5,15 +6,16 @@ type HostLeaderboardProps = {
   answers: HostAnswer[];
   participants: HostParticipant[];
   quiz: Quiz;
+  texts: Texts;
 };
 
-export function HostLeaderboard({ answers, participants, quiz }: HostLeaderboardProps) {
+export function HostLeaderboard({ answers, participants, quiz, texts }: HostLeaderboardProps) {
   const rows = buildHostLeaderboard(participants, answers, quiz);
   const podiumRows = [rows[1], rows[0], rows[2]].filter(Boolean);
   const otherRows = rows.slice(3);
 
   if (rows.length === 0) {
-    return <p className="empty">Leaderboard will appear after players join.</p>;
+    return <p className="empty">{texts.leaderboardEmpty}</p>;
   }
 
   return (

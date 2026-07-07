@@ -1,7 +1,7 @@
 import { QuizFinishedView } from './QuizFinishedView';
 import { QuizQuestionCard } from './QuizQuestionCard';
 import { useQuizPlayerState } from './useQuizPlayerState';
-import type { Texts } from '../lib/language';
+import type { Language, Texts } from '../lib/language';
 import type { Attempt, Quiz } from '../lib/quizTypes';
 import { getModeDescription } from '../lib/quizPlayerRules';
 
@@ -9,6 +9,7 @@ type QuizPlayerProps = {
   activeSkinId: string;
   attempts: Attempt[];
   initialAnswers: number[];
+  language: Language;
   onClose: () => void;
   onFinish: (score: number, total: number) => Promise<void>;
   onProgress: (answers: number[]) => Promise<void>;
@@ -21,6 +22,7 @@ export function QuizPlayer({
   activeSkinId,
   attempts,
   initialAnswers,
+  language,
   onClose,
   onFinish,
   onProgress,
@@ -28,7 +30,7 @@ export function QuizPlayer({
   rewardPerCorrectAnswer,
   texts,
 }: QuizPlayerProps) {
-  const quizState = useQuizPlayerState({ activeSkinId, initialAnswers, onFinish, onProgress, quiz });
+  const quizState = useQuizPlayerState({ activeSkinId, initialAnswers, language, onFinish, onProgress, quiz });
 
   return (
     <section className="player">
@@ -36,7 +38,7 @@ export function QuizPlayer({
         <div>
           <p className="eyebrow">{texts.explore}</p>
           <h2>{quiz.title}</h2>
-          <p className="message">{getModeDescription(quiz.game_mode)}</p>
+          <p className="message">{getModeDescription(quiz.game_mode, texts)}</p>
         </div>
         <button className="secondary-button" onClick={onClose} type="button">{texts.close}</button>
       </div>

@@ -50,12 +50,12 @@ export function QuizQuestionCard({
       <h3>{question.text}</h3>
       {skinAbility?.id === 'remove_wrong_answer' ? (
         <button className="ability-button" disabled={abilityUsed || removedAnswer !== undefined} onClick={onUseAbility} type="button">
-          {abilityUsed ? 'Power used' : skinAbility.description}
+          {abilityUsed ? texts.powerUsed : texts.removeWrongAnswerAbility}
         </button>
       ) : null}
       {removedAnswer !== undefined ? (
         <p className="ability-note">
-          {skinName} removed one wrong answer for you.
+          {skinName} {texts.skinRemovedWrongAnswer}
         </p>
       ) : null}
       <div className="answer-grid">

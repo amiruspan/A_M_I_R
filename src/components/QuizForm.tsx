@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AiQuizGenerator } from './AiQuizGenerator';
 import type { AiQuizDraft } from '../lib/aiQuiz';
+import type { Texts } from '../lib/language';
 import type { GameMode, QuizQuestion } from '../lib/quizTypes';
 
 type QuizFormProps = {
@@ -10,6 +11,7 @@ type QuizFormProps = {
     gameMode: GameMode,
     questions: QuizQuestion[],
   ) => Promise<void>;
+  texts: Texts;
 };
 
 const starterQuestion: QuizQuestion = {
@@ -22,15 +24,15 @@ function createStarterQuestions() {
   return Array.from({ length: 4 }, () => ({ ...starterQuestion, options: [...starterQuestion.options] }));
 }
 
-const gameModes: { id: GameMode; label: string }[] = [
-  { id: 'normal', label: 'Normal' },
-  { id: 'hardcore', label: 'Hardcore' },
-  { id: 'blitz', label: 'Blitz' },
-  { id: 'practice', label: 'Practice' },
-  { id: 'final_boss', label: 'Final Boss' },
+const gameModes: { id: GameMode; textKey: 'normal' | 'hardcore' | 'blitz' | 'practice' | 'finalBoss' }[] = [
+  { id: 'normal', textKey: 'normal' },
+  { id: 'hardcore', textKey: 'hardcore' },
+  { id: 'blitz', textKey: 'blitz' },
+  { id: 'practice', textKey: 'practice' },
+  { id: 'final_boss', textKey: 'finalBoss' },
 ];
 
-export function QuizForm({ onCreate }: QuizFormProps) {
+export function QuizForm({ onCreate, texts }: QuizFormProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [gameMode, setGameMode] = useState<GameMode>('normal');
@@ -89,10 +91,10 @@ export function QuizForm({ onCreate }: QuizFormProps) {
 
   return (
     <form className="panel stack" onSubmit={handleSubmit}>
-      <h2>Create quiz</h2>
-      <AiQuizGenerator onGenerated={applyAiDraft} />
-      <input onChange={(event) => setTitle(event.target.value)} placeholder="Quiz title" required value={title} />
-      <input onChange={(event) => setDescription(event.target.value)} placeholder="Short description" value={description} />
+      <h2>{texts.createQuiz}</h2>
+      <AiQuizGenerator onGenerated={applyAiDraft} texts={texts} />
+      <input onChange={(event) => setTitle(event.target.value)} placeholder={texts.quizTitle} required value={title} />
+      <input onChange={(event) => setDescription(event.target.value)} placeholder={texts.shortDescription} value={description} />
       <div className="mode-grid">
         {gameModes.map((mode) => (
           <button
@@ -101,7 +103,7 @@ export function QuizForm({ onCreate }: QuizFormProps) {
             onClick={() => setGameMode(mode.id)}
             type="button"
           >
-            {mode.label}
+            {texts[mode.textKey]}
           </button>
         ))}
       </div>
@@ -112,18 +114,18 @@ export function QuizForm({ onCreate }: QuizFormProps) {
           </button>
         ))}
       </div>
-      <input onChange={(event) => updateQuestion({ ...activeQuestion, text: event.target.value })} placeholder="Question" required value={activeQuestion.text} />
+      <input onChange={(event) => updateQuestion({ ...activeQuestion, text: event.target.value })} placeholder={texts.question} required value={activeQuestion.text} />
       {activeQuestion.options.map((option, index) => (
         <label className="option-row" key={index}>
           <input checked={activeQuestion.correctIndex === index} onChange={() => updateQuestion({ ...activeQuestion, correctIndex: index })} type="radio" />
-          <input onChange={(event) => updateOption(index, event.target.value)} placeholder={`Answer ${index + 1}`} required value={option} />
+          <input onChange={(event) => updateOption(index, event.target.value)} placeholder={`${texts.answer} ${index + 1}`} required value={option} />
         </label>
       ))}
       <div className="button-row">
-        <button className="secondary-button" onClick={addQuestion} type="button">Add question</button>
-        <button className="secondary-button" disabled={questions.length === 1} onClick={removeQuestion} type="button">Remove</button>
+        <button className="secondary-button" onClick={addQuestion} type="button">{texts.addQuestion}</button>
+        <button className="secondary-button" disabled={questions.length === 1} onClick={removeQuestion} type="button">{texts.remove}</button>
       </div>
-      <button disabled={busy} type="submit">{busy ? 'Saving...' : 'Share quiz'}</button>
+      <button disabled={busy} type="submit">{busy ? texts.saving : texts.shareQuiz}</button>
     </form>
   );
 }

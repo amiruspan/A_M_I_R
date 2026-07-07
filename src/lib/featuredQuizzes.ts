@@ -1,3 +1,4 @@
+import type { Language } from './language';
 import type { Quiz } from './quizTypes';
 
 export const featuredQuizzes: Quiz[] = [
@@ -139,11 +140,116 @@ export const featuredQuizzes: Quiz[] = [
   },
 ];
 
-export function mergeFeaturedQuizzes(quizzes: Quiz[]) {
-  const existingCodes = new Set(quizzes.map((quiz) => quiz.share_code));
-  return [...quizzes, ...featuredQuizzes.filter((quiz) => !existingCodes.has(quiz.share_code))];
+export const levelPlaylistQuizIds = featuredQuizzes.map((quiz) => quiz.id);
+
+const ruFeaturedText: Record<string, Pick<Quiz, 'title' | 'description' | 'questions'>> = {
+  'featured-math-plus': {
+    title: 'Математический вызов плюс',
+    description: 'Сложнее: дроби, проценты и степени.',
+    questions: [
+      { text: 'Сколько будет 3/4 от 80?', options: ['45', '50', '60', '70'], correctIndex: 2 },
+      { text: 'Сколько будет 2 в степени 6?', options: ['32', '48', '64', '128'], correctIndex: 2 },
+      { text: 'Цена выросла с 200 до 250. На сколько процентов?', options: ['20%', '25%', '30%', '50%'], correctIndex: 1 },
+      { text: 'Чему равен квадратный корень из 196?', options: ['12', '13', '14', '16'], correctIndex: 2 },
+      { text: 'Реши: 5x = 45. Чему равен x?', options: ['7', '8', '9', '10'], correctIndex: 2 },
+    ],
+  },
+  'featured-coding-basics': {
+    title: 'Основы программирования',
+    description: 'Идеи программирования для начинающих.',
+    questions: [
+      { text: 'Для чего нужна переменная?', options: ['Хранить данные', 'Рисовать пиксели', 'Заряжать батарею', 'Открывать двери'], correctIndex: 0 },
+      { text: 'Какое значение является boolean?', options: ['Maybe', 'True', 'Blue', '100px'], correctIndex: 1 },
+      { text: 'Что делает цикл?', options: ['Повторяет действия', 'Удаляет интернет', 'Рисует только круги', 'Останавливает весь код'], correctIndex: 0 },
+      { text: 'Какой символ часто означает строгое равенство в JavaScript?', options: ['=', '==', '===', '=>'], correctIndex: 2 },
+      { text: 'Что такое bug в коде?', options: ['Ошибка', 'Кнопка', 'Сервер', 'Цвет'], correctIndex: 0 },
+    ],
+  },
+  'featured-fast-math': {
+    title: 'Быстрая математика',
+    description: 'Разминка с быстрыми вычислениями.',
+    questions: [
+      { text: 'Сколько будет 27 + 36?', options: ['53', '61', '63', '73'], correctIndex: 2 },
+      { text: 'Сколько будет 9 x 7?', options: ['54', '63', '72', '81'], correctIndex: 1 },
+      { text: 'Сколько будет 100 - 38?', options: ['52', '58', '62', '68'], correctIndex: 2 },
+      { text: 'Сколько будет 48 / 6?', options: ['6', '7', '8', '9'], correctIndex: 2 },
+      { text: 'Сколько будет 11 x 11?', options: ['111', '121', '131', '144'], correctIndex: 1 },
+    ],
+  },
+  'featured-fractions': {
+    title: 'Практика дробей',
+    description: 'Викторина про дроби и десятичные числа.',
+    questions: [
+      { text: 'Сколько будет 1/2 + 1/4?', options: ['1/4', '1/2', '3/4', '1'], correctIndex: 2 },
+      { text: 'Что такое 0.5 в виде дроби?', options: ['1/2', '1/3', '1/4', '2/5'], correctIndex: 0 },
+      { text: 'Какая дробь равна 2/4?', options: ['1/2', '1/3', '3/4', '4/8'], correctIndex: 0 },
+      { text: 'Что такое 3/10 в десятичном виде?', options: ['0.03', '0.3', '3.0', '30'], correctIndex: 1 },
+      { text: 'Сколько будет 1/5 от 50?', options: ['5', '10', '15', '20'], correctIndex: 1 },
+    ],
+  },
+  'featured-geometry': {
+    title: 'Основы геометрии',
+    description: 'Фигуры, углы и площадь.',
+    questions: [
+      { text: 'Сколько градусов в прямом угле?', options: ['45', '60', '90', '180'], correctIndex: 2 },
+      { text: 'Сколько сторон у шестиугольника?', options: ['5', '6', '7', '8'], correctIndex: 1 },
+      { text: 'Площадь прямоугольника 5 на 4?', options: ['9', '18', '20', '25'], correctIndex: 2 },
+      { text: 'Сколько градусов в треугольнике?', options: ['90', '120', '180', '360'], correctIndex: 2 },
+      { text: 'У какой фигуры нет углов?', options: ['Квадрат', 'Треугольник', 'Круг', 'Прямоугольник'], correctIndex: 2 },
+    ],
+  },
+  'featured-algebra': {
+    title: 'Старт в алгебре',
+    description: 'Простые уравнения.',
+    questions: [
+      { text: 'Реши: x + 7 = 15.', options: ['6', '7', '8', '9'], correctIndex: 2 },
+      { text: 'Реши: 3x = 21.', options: ['6', '7', '8', '9'], correctIndex: 1 },
+      { text: 'Реши: x - 4 = 10.', options: ['6', '10', '14', '16'], correctIndex: 2 },
+      { text: 'Чему равно 2x, если x = 9?', options: ['11', '16', '18', '20'], correctIndex: 2 },
+      { text: 'Реши: x / 5 = 4.', options: ['9', '15', '20', '25'], correctIndex: 2 },
+    ],
+  },
+  'featured-kazakhstan': {
+    title: 'Факты о Казахстане',
+    description: 'Города, природа и культура Казахстана.',
+    questions: [
+      { text: 'Какая столица Казахстана?', options: ['Алматы', 'Астана', 'Шымкент', 'Актобе'], correctIndex: 1 },
+      { text: 'Какой город известен горами рядом?', options: ['Алматы', 'Атырау', 'Костанай', 'Кызылорда'], correctIndex: 0 },
+      { text: 'Какая валюта в Казахстане?', options: ['Сом', 'Тенге', 'Рубль', 'Лира'], correctIndex: 1 },
+      { text: 'Какое животное связано со степью и кочевой культурой?', options: ['Лошадь', 'Пингвин', 'Кенгуру', 'Панда'], correctIndex: 0 },
+      { text: 'Какое море связано с Казахстаном и другими странами?', options: ['Каспийское море', 'Байкал', 'Виктория', 'Верхнее'], correctIndex: 0 },
+    ],
+  },
+  'featured-final-boss': {
+    title: 'Финальный босс микс',
+    description: 'Сложная смешанная викторина для уверенных игроков.',
+    questions: [
+      { text: 'В какой стране находится город Киото?', options: ['Китай', 'Япония', 'Таиланд', 'Вьетнам'], correctIndex: 1 },
+      { text: 'Что означает HTML?', options: ['HyperText Markup Language', 'High Tech Machine Logic', 'Home Tool Main Link', 'Hyperlink Text Maker'], correctIndex: 0 },
+      { text: 'Кто разработал теорию относительности?', options: ['Исаак Ньютон', 'Альберт Эйнштейн', 'Никола Тесла', 'Мария Кюри'], correctIndex: 1 },
+      { text: 'Сколько будет 18 x 7?', options: ['116', '124', '126', '136'], correctIndex: 2 },
+      { text: 'Какой газ растения поглощают для фотосинтеза?', options: ['Кислород', 'Углекислый газ', 'Гелий', 'Азот'], correctIndex: 1 },
+    ],
+  },
+};
+
+function localizeFeaturedQuiz(quiz: Quiz, language: Language) {
+  if (language !== 'ru') return quiz;
+  const translation = ruFeaturedText[quiz.id];
+  return translation ? { ...quiz, ...translation } : quiz;
 }
 
-export function findFeaturedQuizByCode(code: string) {
-  return featuredQuizzes.find((quiz) => quiz.share_code === code) ?? null;
+export function mergeFeaturedQuizzes(quizzes: Quiz[], language: Language = 'en') {
+  const existingCodes = new Set(quizzes.map((quiz) => quiz.share_code));
+  return [
+    ...quizzes,
+    ...featuredQuizzes
+      .filter((quiz) => !existingCodes.has(quiz.share_code))
+      .map((quiz) => localizeFeaturedQuiz(quiz, language)),
+  ];
+}
+
+export function findFeaturedQuizByCode(code: string, language: Language = 'en') {
+  const quiz = featuredQuizzes.find((item) => item.share_code === code) ?? null;
+  return quiz ? localizeFeaturedQuiz(quiz, language) : null;
 }

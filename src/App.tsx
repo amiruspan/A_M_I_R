@@ -130,6 +130,10 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    if (!loading && user) void refresh(user);
+  }, [language]);
+
   function handleLanguage(nextLanguage: Language) {
     localStorage.setItem(languageStorageKey, nextLanguage);
     setLanguage(nextLanguage);
@@ -143,7 +147,7 @@ export default function App() {
   async function refresh(nextUser: LocalUser | null = user) {
     if (isGuestUser(nextUser)) {
       const remoteQuizzes = await loadRemoteQuizzes().catch(() => []);
-      setQuizzes(mergeFeaturedQuizzes([...loadGuestQuizzes(), ...remoteQuizzes]));
+      setQuizzes(mergeFeaturedQuizzes([...loadGuestQuizzes(), ...remoteQuizzes], language));
       setAttempts(loadGuestAttempts());
       return;
     }
@@ -152,7 +156,7 @@ export default function App() {
       loadRemoteQuizzes().catch(() => []),
       loadRemoteAttempts().catch(() => []),
     ]);
-    setQuizzes(mergeFeaturedQuizzes(nextQuizzes));
+    setQuizzes(mergeFeaturedQuizzes(nextQuizzes, language));
     setAttempts(nextAttempts);
   }
 
@@ -371,7 +375,7 @@ export default function App() {
         return;
       }
 
-      const joinedQuiz = await loadRemoteQuizByCode(cleanCode) ?? findFeaturedQuizByCode(cleanCode);
+      const joinedQuiz = await loadRemoteQuizByCode(cleanCode) ?? findFeaturedQuizByCode(cleanCode, language);
 
       if (!joinedQuiz) {
         setMessage('Quiz code not found.');
@@ -560,6 +564,7 @@ export default function App() {
           onStart={handleStartLiveGame}
           quiz={activeHost.quiz}
           session={activeHost.session}
+          texts={copy}
         />
       ) : activeLive ? (
         <LiveQuizPlayer
@@ -577,10 +582,12 @@ export default function App() {
           participant={activeLive.participant}
           quiz={activeLive.quiz}
           session={activeLive.session}
+          texts={copy}
         />
       ) : (
       <>
       <AppHeader
+        language={language}
         profile={user}
         texts={copy}
       />
@@ -590,6 +597,7 @@ export default function App() {
           activeSkinId={user.active_skin_id}
           attempts={attempts}
           initialAnswers={activeAnswers}
+          language={language}
           onClose={() => setActiveQuiz(null)}
           onFinish={async (score, total) => handleFinish(score, total)}
           onProgress={handleProgress}
@@ -613,7 +621,7 @@ export default function App() {
               {copy.profile}
             </button>
             <button className={page === 'settings' ? 'active' : ''} onClick={() => navigateToPage('settings')} type="button">
-              Settings
+              {copy.settings}
             </button>
           </nav>
           {page === 'publish' ? (
@@ -639,7 +647,9 @@ export default function App() {
               onOpenFramePack={handleOpenFramePack}
               onOpenPack={handleOpenPack}
               frameResult={frameResult}
+              language={language}
               packResult={packResult}
+              texts={copy}
               user={user}
             />
           ) : page === 'profile' ? (
@@ -652,6 +662,7 @@ export default function App() {
               />
               <ProfileStats
                 attempts={attempts}
+                language={language}
                 onClaimDailyBonus={handleDailyBonus}
                 quizzes={quizzes}
                 texts={copy}

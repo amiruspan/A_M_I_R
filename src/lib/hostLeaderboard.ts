@@ -1,3 +1,4 @@
+import type { Texts } from './language';
 import type { HostAnswer, HostParticipant, HostSession, Quiz } from './quizTypes';
 
 export type HostLeaderboardRow = {
@@ -32,9 +33,9 @@ export function countQuestionAnswers(answers: HostAnswer[], questionIndex: numbe
   return answers.filter((answer) => answer.question_index === questionIndex).length;
 }
 
-export function getHostTitle(session: HostSession, totalQuestions: number) {
-  if (session.status === 'lobby') return 'Waiting room';
+export function getHostTitle(session: HostSession, totalQuestions: number, texts: Texts) {
+  if (session.status === 'lobby') return texts.waitingRoom;
   return session.status === 'finished'
-    ? 'Final leaderboard'
-    : `Question ${session.current_question_index + 1} / ${totalQuestions}`;
+    ? texts.finalLeaderboard
+    : `${texts.question} ${session.current_question_index + 1} / ${totalQuestions}`;
 }

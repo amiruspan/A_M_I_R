@@ -1,3 +1,4 @@
+import type { Language } from './language';
 import type { Attempt, LocalUser, Profile, Quiz } from './quizTypes';
 
 export type Badge = {
@@ -18,6 +19,21 @@ export const badges: Badge[] = [
   { id: 'perfect_run', name: 'Perfect Run', description: 'Get a perfect quiz score.' },
   { id: 'quiz_maker', name: 'Quiz Maker', description: 'Create your first quiz.' },
 ];
+
+const russianBadges: Record<string, { name: string; description: string }> = {
+  first_quiz: { name: 'Первый квиз', description: 'Заверши свою первую викторину.' },
+  sharp_mind: { name: 'Острый ум', description: 'Ответь правильно на 10 вопросов.' },
+  perfect_run: { name: 'Идеальный забег', description: 'Получи идеальный результат в викторине.' },
+  quiz_maker: { name: 'Создатель квизов', description: 'Создай свою первую викторину.' },
+};
+
+export function getBadgeName(badge: Badge, language: Language) {
+  return language === 'ru' ? russianBadges[badge.id]?.name ?? badge.name : badge.name;
+}
+
+export function getBadgeDescription(badge: Badge, language: Language) {
+  return language === 'ru' ? russianBadges[badge.id]?.description ?? badge.description : badge.description;
+}
 
 export function getLevelInfo(xp: number) {
   const level = Math.floor(xp / xpPerLevel) + 1;
