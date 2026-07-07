@@ -1,5 +1,6 @@
 import type { Profile } from '../lib/quizTypes';
 import type { Language, Texts } from '../lib/language';
+import type { AppTheme } from '../lib/theme';
 import { getNameFrame } from '../lib/nameFrameCatalog';
 import { getLevelInfo } from '../lib/profileProgress';
 import { getSkin } from '../lib/skinCatalog';
@@ -7,16 +8,27 @@ import { BackgroundMusicButton } from './BackgroundMusicButton';
 import { LanguageToggle } from './LanguageToggle';
 import { SkinBadge } from './SkinBadge';
 import { StreakBadge } from './StreakBadge';
+import { ThemeToggle } from './ThemeToggle';
 
 type AppHeaderProps = {
   language: Language;
   onLanguageChange: (language: Language) => void;
+  onThemeChange: (theme: AppTheme) => void;
   profile: Profile;
+  theme: AppTheme;
   onSignOut: () => void;
   texts: Texts;
 };
 
-export function AppHeader({ language, onLanguageChange, profile, onSignOut, texts }: AppHeaderProps) {
+export function AppHeader({
+  language,
+  onLanguageChange,
+  onSignOut,
+  onThemeChange,
+  profile,
+  texts,
+  theme,
+}: AppHeaderProps) {
   const nameFrame = getNameFrame(profile.active_name_frame_id);
   const levelInfo = getLevelInfo(profile.xp);
   const activeSkin = getSkin(profile.active_skin_id);
@@ -41,6 +53,7 @@ export function AppHeader({ language, onLanguageChange, profile, onSignOut, text
           </div>
         </div>
         <StreakBadge texts={texts} user={profile} />
+        <ThemeToggle onChange={onThemeChange} theme={theme} />
         <LanguageToggle language={language} onChange={onLanguageChange} texts={texts} />
         <BackgroundMusicButton />
         <button className="secondary-button" onClick={onSignOut} type="button">

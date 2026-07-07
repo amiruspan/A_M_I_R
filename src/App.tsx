@@ -72,6 +72,8 @@ import { xpPerCorrectAnswer, xpPerQuizComplete } from './lib/profileProgress';
 import type { AppPage } from './lib/routes';
 import { getPathForPage, isKnownAppPath, readPageFromPath } from './lib/routes';
 import { supabase } from './lib/supabase';
+import type { AppTheme } from './lib/theme';
+import { readTheme, themeStorageKey } from './lib/theme';
 import { getCurrentUser, isGuestUser, saveGuestProfile, saveProfile, signOut } from './lib/userStore';
 import type { NameFrame } from './lib/nameFrameCatalog';
 import type { Skin } from './lib/skinCatalog';
@@ -120,11 +122,21 @@ export default function App() {
   const [language, setLanguage] = useState<Language>(() => (
     localStorage.getItem(languageStorageKey) === 'ru' ? 'ru' : 'en'
   ));
+  const [theme, setTheme] = useState<AppTheme>(() => readTheme());
   const copy = texts[language];
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   function handleLanguage(nextLanguage: Language) {
     localStorage.setItem(languageStorageKey, nextLanguage);
     setLanguage(nextLanguage);
+  }
+
+  function handleTheme(nextTheme: AppTheme) {
+    localStorage.setItem(themeStorageKey, nextTheme);
+    setTheme(nextTheme);
   }
 
   async function refresh(nextUser: LocalUser | null = user) {
@@ -571,8 +583,10 @@ export default function App() {
         language={language}
         onLanguageChange={handleLanguage}
         onSignOut={() => void handleSignOut()}
+        onThemeChange={handleTheme}
         profile={user}
         texts={copy}
+        theme={theme}
       />
       {message && <p className="message">{message}</p>}
       {activeQuiz ? (
