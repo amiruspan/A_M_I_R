@@ -14,6 +14,11 @@ export function WelcomeScreen({ language, onLanguageChange, onStart, texts }: We
     { title: texts.welcomeTwoTitle, text: texts.welcomeTwoText },
     { title: texts.welcomeThreeTitle, text: texts.welcomeThreeText },
   ];
+  const tutorial = [
+    { title: texts.tutorialOneTitle, text: texts.tutorialOneText },
+    { title: texts.tutorialTwoTitle, text: texts.tutorialTwoText },
+    { title: texts.tutorialThreeTitle, text: texts.tutorialThreeText },
+  ];
 
   return (
     <main className="welcome-screen">
@@ -25,6 +30,17 @@ export function WelcomeScreen({ language, onLanguageChange, onStart, texts }: We
           <p className="welcome-text">
             {texts.welcomeText}
           </p>
+          <div className="welcome-tutorial" aria-label={texts.tutorialTitle}>
+            <strong>{texts.tutorialTitle}</strong>
+            <ol>
+              {tutorial.map((item) => (
+                <li key={item.title}>
+                  <span>{item.title}</span>
+                  <p>{item.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
           <button onClick={onStart} type="button">{texts.welcomeAction}</button>
         </div>
 

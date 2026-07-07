@@ -49,8 +49,19 @@ export function ProfileStats({ attempts, onClaimDailyBonus, quizzes, texts, user
         <StatCard label={streakActive ? texts.dayStreak : texts.newStreak} value={String(user.login_streak)} />
       </div>
 
-      <div className="level-track" aria-label="Level progress">
-        <div style={{ width: `${levelInfo.percent}%` }} />
+      <div className="xp-progress" aria-label="Level progress">
+        <div className="xp-progress-top">
+          <span>Level {levelInfo.level}</span>
+          <strong>{levelInfo.percent}%</strong>
+        </div>
+        <div className="level-track">
+          <div style={{ width: `${levelInfo.percent}%` }}>
+            <span />
+          </div>
+        </div>
+        <p className="xp-progress-caption">
+          {levelInfo.currentLevelXp} / {levelInfo.nextLevelXp} XP to level {levelInfo.level + 1}
+        </p>
       </div>
 
       <button disabled={!dailyReady} onClick={() => void onClaimDailyBonus()} type="button">

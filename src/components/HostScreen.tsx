@@ -101,7 +101,7 @@ export function HostScreen({
         </div>
       ) : null}
 
-      <section className="host-players">
+      <section className={liveSession.status === 'lobby' ? 'host-players host-lobby' : 'host-players'}>
         <div>
           <p className="eyebrow">{liveSession.status === 'lobby' ? 'Players joined' : 'Live round'}</p>
           <h2>{getHostTitle(liveSession, quiz.questions.length)}</h2>
