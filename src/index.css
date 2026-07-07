@@ -1165,6 +1165,27 @@ h3 { font-size: 18px; }
 
 .stats-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 
+.settings-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.setting-card {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(220px, auto);
+  align-items: center;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(148, 151, 169, 0.08);
+  padding: 14px;
+}
+
+.setting-card p {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 .stat-card {
   display: grid;
   gap: 4px;
@@ -1275,7 +1296,7 @@ h3 { font-size: 18px; }
   .host-topbar { flex-direction: column; }
   .user-box { justify-items: start; }
   .streak-badge { justify-self: start; }
-  .workspace, .profile-grid, .welcome-panel, .answer-grid, .mode-grid, .skin-grid, .pack-grid, .frame-grid, .stats-grid, .badge-grid { grid-template-columns: 1fr; }
+  .workspace, .profile-grid, .welcome-panel, .answer-grid, .mode-grid, .skin-grid, .pack-grid, .frame-grid, .stats-grid, .badge-grid, .setting-card { grid-template-columns: 1fr; }
   .join-form { grid-template-columns: 1fr; }
   .prize-board li { grid-template-columns: 1fr; }
   .pack-card { grid-template-columns: 76px 1fr; }

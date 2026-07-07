@@ -8,6 +8,7 @@ import { ProfileSetup } from './components/ProfileSetup';
 import { PublishPage } from './components/PublishPage';
 import { ProfileStats } from './components/ProfileStats';
 import { QuizPlayer } from './components/QuizPlayer';
+import { SettingsPage } from './components/SettingsPage';
 import { SkinShop } from './components/SkinShop';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import type { Language } from './lib/language';
@@ -580,13 +581,8 @@ export default function App() {
       ) : (
       <>
       <AppHeader
-        language={language}
-        onLanguageChange={handleLanguage}
-        onSignOut={() => void handleSignOut()}
-        onThemeChange={handleTheme}
         profile={user}
         texts={copy}
-        theme={theme}
       />
       {message && <p className="message">{message}</p>}
       {activeQuiz ? (
@@ -615,6 +611,9 @@ export default function App() {
             </button>
             <button className={page === 'profile' ? 'active' : ''} onClick={() => navigateToPage('profile')} type="button">
               {copy.profile}
+            </button>
+            <button className={page === 'settings' ? 'active' : ''} onClick={() => navigateToPage('settings')} type="button">
+              Settings
             </button>
           </nav>
           {page === 'publish' ? (
@@ -659,6 +658,15 @@ export default function App() {
                 user={user}
               />
             </div>
+          ) : page === 'settings' ? (
+            <SettingsPage
+              language={language}
+              onLanguageChange={handleLanguage}
+              onSignOut={() => void handleSignOut()}
+              onThemeChange={handleTheme}
+              texts={copy}
+              theme={theme}
+            />
           ) : (
             <ExplorePage
               attempts={attempts}
